@@ -1,13 +1,13 @@
 # Installer OF FACTORY sur plusieurs PC
 
-Version Windows 64 bits : **2.2.9**. Les installateurs sont distribués dans les [publications OF FACTORY](https://github.com/alexisriviere-ai/Offactory/releases).
+Version Windows 64 bits : **2.2.10**. Les installateurs sont distribués dans les [publications OF FACTORY](https://github.com/alexisriviere-ai/Offactory/releases).
 
 ## Sur chaque ordinateur
 
-1. Télécharger **OF-Factory-Setup-2.2.9.exe** dans les fichiers de la publication, ou copier ce même fichier sur une clé USB.
+1. Télécharger **OF-Factory-Setup-2.2.10.exe** dans les fichiers de la publication, ou copier ce même fichier sur une clé USB.
 2. Ouvrir le fichier et terminer l’installation. Aucun Node.js ni Python n’est nécessaire.
 3. Lancer **OF FACTORY** depuis le raccourci du Bureau ou le menu Démarrer.
-4. Au premier démarrage, créer le nom et le PIN de cet ordinateur, ou importer un atelier existant avant cette initialisation.
+4. L’atelier s’ouvre directement sans PIN. Pour reprendre une version locale existante, importer son atelier avant de commencer à créer des chantiers.
 
 Chaque PC garde ses propres chantiers, panier, réglages, logos et documents. Les données ne se synchronisent pas.
 
@@ -15,9 +15,9 @@ Cet installateur ne possède pas de certificat de signature Windows. Windows peu
 
 ## Reprendre un atelier existant
 
-Avant de créer un nouveau nom/PIN, ouvrir **Fichier → Importer mon atelier existant…**, puis choisir le dossier **data** de la version locale OF FACTORY. L’import reprend le PIN, les chantiers, le panier, les réglages, les logos, les repères et les documents. Le dossier d’origine est conservé.
+Avant de créer un nouveau nom/PIN, ouvrir **Fichier → Importer mon atelier existant…**, puis choisir le dossier **data** de la version locale OF FACTORY. L’import reprend le profil, les chantiers, le panier, les réglages, les logos, les repères et les documents. Le dossier d’origine est conservé.
 
-Pour démarrer les autres PC avec une copie du même atelier, copier le dossier **data** complet sur une clé USB et importer cette copie avant leur première initialisation. Chaque PC travaille ensuite indépendamment. Un atelier déjà initialisé ne sera pas remplacé par cet import initial.
+Pour démarrer les autres PC avec une copie du même atelier, copier le dossier **data** complet sur une clé USB et importer cette copie avant leur première utilisation. Chaque PC travaille ensuite indépendamment. Un atelier déjà initialisé ne sera pas remplacé par cet import initial.
 
 ## Mises à jour
 
