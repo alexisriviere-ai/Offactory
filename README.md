@@ -2,9 +2,9 @@
 
 Application Windows pour la fabrication de plénums, la tôlerie, le dessin libre, le nesting et les étiquettes atelier.
 
-**[Télécharger l’installateur Windows OF FACTORY 2.2.9](https://github.com/alexisriviere-ai/Offactory/releases/download/v2.2.9/OF-Factory-Setup-2.2.9.exe)**
+**[Télécharger l’installateur Windows OF FACTORY 2.2.10](https://github.com/alexisriviere-ai/Offactory/releases/download/v2.2.10/OF-Factory-Setup-2.2.10.exe)**
 
-Suivre la [procédure d’installation sur plusieurs PC](INSTALLATION.md), avec reprise de l’atelier existant avant la création du nouveau PIN. Chaque ordinateur possède ses propres données locales.
+Suivre la [procédure d’installation sur plusieurs PC](INSTALLATION.md), avec reprise de l’atelier existant et ouverture directe sans PIN. Chaque ordinateur possède ses propres données locales.
 
 Les futures mises à jour utilisent ce dépôt. Elles sont téléchargées en arrière-plan puis installées à la fermeture d’OF FACTORY ou depuis « Installer et redémarrer ». Les données de l’atelier sont conservées et sauvegardées avant l’installation.
 
