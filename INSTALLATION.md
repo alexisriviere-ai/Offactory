@@ -1,10 +1,10 @@
 # Installer OF FACTORY sur plusieurs PC
 
-Version Windows 64 bits : **2.2.14**. Les installateurs sont distribués dans les [publications OF FACTORY](https://github.com/alexisriviere-ai/Offactory/releases).
+Version Windows 64 bits : **2.2.15**. Les installateurs sont distribués dans les [publications OF FACTORY](https://github.com/alexisriviere-ai/Offactory/releases).
 
 ## Sur chaque ordinateur
 
-1. Télécharger **OF-Factory-Setup-2.2.14.exe** dans les fichiers de la publication, ou copier ce même fichier sur une clé USB.
+1. Télécharger **OF-Factory-Setup-2.2.15.exe** dans les fichiers de la publication, ou copier ce même fichier sur une clé USB.
 2. Ouvrir le fichier et terminer l’installation. Aucun Node.js ni Python n’est nécessaire.
 3. Lancer **OF FACTORY** depuis le raccourci du Bureau ou le menu Démarrer.
 4. L’atelier s’ouvre directement sans PIN. Pour reprendre une version locale existante, importer son atelier avant de commencer à créer des chantiers.
@@ -48,3 +48,7 @@ Ce format représente deux tôles de **3000 × 1500 mm** jointives. Le placement
 Dans le menu principal, ouvrir **Gaine rectangulaire**, choisir la famille de pièce puis saisir ses dimensions. Les vues se recalculent automatiquement. Les coudes proposent des talons droits et un rayon intérieur réglable ; **R = 0** conserve un angle intérieur droit avec un extérieur courbe.
 
 Ajouter, dupliquer ou supprimer les pièces selon le besoin. **Exporter le PDF** produit une page par repère, avec sa quantité, dans un fichier vectoriel compressé. Le poids du fichier est affiché avant export. Les pièces sont enregistrées dans l’atelier et incluses dans ses sauvegardes.
+
+Les familles proposées comprennent aussi **Manchette souple** (largeur A, hauteur B, profondeur P), **Bouchon rectangulaire**, **Bouchon grillagé** et **Piquage rectangulaire**. Pour les bouchons, régler A, B et la hauteur HT, fixée à 30 mm par défaut ; le fond grillagé propose une maille réglable. Pour le piquage, régler A, B, la profondeur C et le bord tombé BT, fixé à 20 mm par défaut. **P1** est un type de cadre / profil, sélectionnable dans Cadre 1.
+
+Les cadres sélectionnés sont dessinés en perspective. Les transformations rectangle / rond portent les cotes C/F en face, D/G en dessus et les quatre repères en isométrie. Pour les coudes transformés, l’arrondi extérieur rejoint une partie droite ; les talons D/E et le rayon intérieur restent réglables.
