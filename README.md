@@ -2,9 +2,9 @@
 
 Application Windows pour la fabrication de plénums, la tôlerie, le dessin libre, le nesting et les étiquettes atelier.
 
-**[Télécharger l’installateur Windows OF FACTORY 2.2.13](https://github.com/alexisriviere-ai/Offactory/releases/download/v2.2.13/OF-Factory-Setup-2.2.13.exe)**
+**[Télécharger l’installateur Windows OF FACTORY 2.2.14](https://github.com/alexisriviere-ai/Offactory/releases/download/v2.2.14/OF-Factory-Setup-2.2.14.exe)**
 
-Nouveautés de la version 2.2.13 : format 6000 × 1500 composé de deux tôles de 3000 × 1500 sans pièce sur la jonction, répartition automatique des piquages grille améliorée, repère libre par exemplaire avec compteur automatique, cinq nouveaux logos thermiques et retrait de l’isolant modifiable en conservant les consignes automatiques par défaut.
+Nouveautés de la version 2.2.14 : nouvel onglet **Gaine rectangulaire**, vues paramétriques, talons et rayon des coudes réglables, ajout / duplication / suppression des pièces et export PDF vectoriel léger, avec une fiche par repère. Les pièces sont enregistrées automatiquement dans les données de l’atelier.
 
 Suivre la [procédure d’installation sur plusieurs PC](INSTALLATION.md), avec reprise de l’atelier existant et ouverture directe sans PIN. Chaque ordinateur possède ses propres données locales.
 
