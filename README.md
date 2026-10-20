@@ -2,9 +2,9 @@
 
 Application Windows pour la fabrication de plénums, la tôlerie, le dessin libre, le nesting et les étiquettes atelier.
 
-**[Télécharger l’installateur Windows OF FACTORY 2.2.15](https://github.com/alexisriviere-ai/Offactory/releases/download/v2.2.15/OF-Factory-Setup-2.2.15.exe)**
+**[Télécharger l’installateur Windows OF FACTORY 2.2.16](https://github.com/alexisriviere-ai/Offactory/releases/download/v2.2.16/OF-Factory-Setup-2.2.16.exe)**
 
-Nouveautés de la version 2.2.15 : **manchette souple**, **bouchons rectangulaire et grillagé**, **piquage rectangulaire** et profil **P1** dans Gaine rectangulaire. Repères C/D/F/G ajoutés aux transformations, cadres visibles en perspective et contour des coudes transformés corrigé. Les 11 types de pièces conservent leurs vues paramétriques et l’export PDF léger : environ 342 ko pour le contrôle de 100 pages.
+Nouveautés de la version 2.2.16 : **prix de vente installateur HT en pied de page** des configurateurs Gainable et Grille, recalcul selon les dimensions et les options, total synchronisé avec la quantité, sauvegarde et réouverture du prix. Les évasements en largeur comptent les chutes dans la matière et une majoration de 20 % de la part main-d’œuvre. Les épaisseurs hors barème affichent « Prix à confirmer ». Le classeur source et les prix de revient ne sont pas inclus.
 
 Suivre la [procédure d’installation sur plusieurs PC](INSTALLATION.md), avec reprise de l’atelier existant et ouverture directe sans PIN. Chaque ordinateur possède ses propres données locales.
 

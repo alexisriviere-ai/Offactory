@@ -1,10 +1,10 @@
 # Installer OF FACTORY sur plusieurs PC
 
-Version Windows 64 bits : **2.2.15**. Les installateurs sont distribués dans les [publications OF FACTORY](https://github.com/alexisriviere-ai/Offactory/releases).
+Version Windows 64 bits : **2.2.16**. Les installateurs sont distribués dans les [publications OF FACTORY](https://github.com/alexisriviere-ai/Offactory/releases).
 
 ## Sur chaque ordinateur
 
-1. Télécharger **OF-Factory-Setup-2.2.15.exe** dans les fichiers de la publication, ou copier ce même fichier sur une clé USB.
+1. Télécharger **OF-Factory-Setup-2.2.16.exe** dans les fichiers de la publication, ou copier ce même fichier sur une clé USB.
 2. Ouvrir le fichier et terminer l’installation. Aucun Node.js ni Python n’est nécessaire.
 3. Lancer **OF FACTORY** depuis le raccourci du Bureau ou le menu Démarrer.
 4. L’atelier s’ouvre directement sans PIN. Pour reprendre une version locale existante, importer son atelier avant de commencer à créer des chantiers.
@@ -52,3 +52,11 @@ Ajouter, dupliquer ou supprimer les pièces selon le besoin. **Exporter le PDF**
 Les familles proposées comprennent aussi **Manchette souple** (largeur A, hauteur B, profondeur P), **Bouchon rectangulaire**, **Bouchon grillagé** et **Piquage rectangulaire**. Pour les bouchons, régler A, B et la hauteur HT, fixée à 30 mm par défaut ; le fond grillagé propose une maille réglable. Pour le piquage, régler A, B, la profondeur C et le bord tombé BT, fixé à 20 mm par défaut. **P1** est un type de cadre / profil, sélectionnable dans Cadre 1.
 
 Les cadres sélectionnés sont dessinés en perspective. Les transformations rectangle / rond portent les cotes C/F en face, D/G en dessus et les quatre repères en isométrie. Pour les coudes transformés, l’arrondi extérieur rejoint une partie droite ; les talons D/E et le rayon intérieur restent réglables.
+
+## Prix de vente installateur
+
+Dans les configurateurs **Gainable** et **Grille**, le pied de page affiche le **prix installateur unitaire HT**. Le montant suit les dimensions, les piquages, le bord tombé, l’isolation intérieure et l’épaisseur de tôle. La quantité saisie en haut de l’écran détermine le total.
+
+L’épaisseur choisie en pied de page est aussi celle de la fabrication. Le prix de vente est sauvegardé avec le plénum et recalculé à sa réouverture. Le calcul utilise les tarifs de vente directement, sans classeur Excel à ouvrir ni prix de revient intégré.
+
+Pour un évasement en largeur, la matière est facturée sur les dimensions maximales, chutes comprises, et la part main-d’œuvre est majorée de **20 %**. Le barème couvre le galva **0,6 / 0,7 / 0,8 / 1,2 / 1,5 mm** ; les autres épaisseurs affichent **Prix à confirmer**.
