@@ -1,10 +1,10 @@
 # Installer OF FACTORY sur plusieurs PC
 
-Version Windows 64 bits : **2.2.16**. Les installateurs sont distribués dans les [publications OF FACTORY](https://github.com/alexisriviere-ai/Offactory/releases).
+Version Windows 64 bits : **2.2.17**. Les installateurs sont distribués dans les [publications OF FACTORY](https://github.com/alexisriviere-ai/Offactory/releases).
 
 ## Sur chaque ordinateur
 
-1. Télécharger **OF-Factory-Setup-2.2.16.exe** dans les fichiers de la publication, ou copier ce même fichier sur une clé USB.
+1. Télécharger **OF-Factory-Setup-2.2.17.exe** dans les fichiers de la publication, ou copier ce même fichier sur une clé USB.
 2. Ouvrir le fichier et terminer l’installation. Aucun Node.js ni Python n’est nécessaire.
 3. Lancer **OF FACTORY** depuis le raccourci du Bureau ou le menu Démarrer.
 4. L’atelier s’ouvre directement sans PIN. Pour reprendre une version locale existante, importer son atelier avant de commencer à créer des chantiers.
@@ -30,6 +30,8 @@ Les données restent dans `%APPDATA%\OFFactory\data`. Une sauvegarde est créée
 ## Étiquettes Zebra
 
 Installer le pilote Windows ZPL de la Zebra GX430T et brancher l’imprimante en USB sur le même PC qu’OF FACTORY. Dans **Étiquettes**, choisir le logo et l’imprimante, puis vérifier les repères avant l’impression sur des étiquettes de **100 × 50 mm**.
+
+Les étiquettes affichent directement le chantier, le repère libre, les dimensions, les piquages et la mention Isolé / Non isolé. Le logo est agrandi de 10 %. Le compteur est masqué pour une quantité de 1 ; la désignation commerciale et le numéro OF répété en bas sont retirés.
 
 Pour une quantité multiple, cocher **Un repère libre par plénum** afin de saisir un emplacement différent pour chaque exemplaire. Les compteurs **1/3, 2/3, 3/3** restent automatiques. Les nouveaux logos Midea, Mitsubishi Electric, Daikin, Toshiba et Mitsubishi Heavy Industries sont préparés en noir et blanc pour l’impression thermique.
 
