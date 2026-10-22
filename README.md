@@ -1,12 +1,14 @@
 # OF FACTORY — Klima Riv’Air
 
-Application Windows pour la fabrication de plénums, la tôlerie, le dessin libre, le nesting et les étiquettes atelier.
+Application Windows pour la fabrication de plénums, la tôlerie, le dessin libre, le nesting, les étiquettes atelier et les plans d’assemblage chantier.
 
-**[Télécharger l’installateur Windows OF FACTORY 2.2.17](https://github.com/alexisriviere-ai/Offactory/releases/download/v2.2.17/OF-Factory-Setup-2.2.17.exe)**
+**[Télécharger l’installateur Windows OF FACTORY 2.2.18](https://github.com/alexisriviere-ai/Offactory/releases/download/v2.2.18/OF-Factory-Setup-2.2.18.exe)**
 
-Nouveautés de la version 2.2.17 : **étiquettes allégées**. Compteur masqué pour une quantité de 1 et conservé pour les séries ; chantier et repères libres à leurs positions ; logo agrandi de 10 % ; désignation commerciale et numéro OF répété retirés ; quantité des piquages affichée une seule fois.
+Nouveauté de la version 2.2.18 : **Assemblage chantier**. Reprendre les fiches de gaines, placer leurs exemplaires et raccorder les pièces par aimantation. Perspective 3D et vues face, dessus et côté synchronisées ; rotations X/Y/Z par 45° ou 90° ; volume machine et accessoires rectangulaires ou circulaires. Les contrôles signalent les sections incompatibles, les raccords occupés et les chevauchements d’encombrement. Le plan de montage s’exporte en PDF vectoriel compressé, avec nomenclature et liaisons.
 
-Les tarifs de vente installateur HT en pied de page des configurateurs Gainable et Grille restent disponibles, avec recalcul selon les dimensions, options et quantités. Le classeur source et les prix de revient ne sont pas inclus.
+Le chantier d’assemblage s’enregistre localement et peut être échangé en JSON. L’import PDF reconnaît les fiches OF FACTORY contenant du texte ; les positions des pièces et les raccords de la machine sont à définir.
+
+Les étiquettes allégées et les tarifs de vente installateur HT des configurateurs Gainable et Grille restent disponibles. Le classeur source et les prix de revient ne sont pas inclus.
 
 Suivre la [procédure d’installation sur plusieurs PC](INSTALLATION.md), avec reprise de l’atelier existant et ouverture directe sans PIN. Chaque ordinateur possède ses propres données locales.
 
