@@ -1,10 +1,10 @@
 # Installer OF FACTORY sur plusieurs PC
 
-Version Windows 64 bits : **2.2.18**. Les installateurs sont distribués dans les [publications OF FACTORY](https://github.com/alexisriviere-ai/Offactory/releases).
+Version Windows 64 bits : **2.2.20**. Les installateurs sont distribués dans les [publications OF FACTORY](https://github.com/alexisriviere-ai/Offactory/releases).
 
 ## Sur chaque ordinateur
 
-1. Télécharger **OF-Factory-Setup-2.2.18.exe** dans les fichiers de la publication, ou copier ce même fichier sur une clé USB.
+1. Télécharger **OF-Factory-Setup-2.2.20.exe** dans les fichiers de la publication, ou copier ce même fichier sur une clé USB.
 2. Ouvrir le fichier et terminer l’installation. Aucun Node.js ni Python n’est nécessaire.
 3. Lancer **OF FACTORY** depuis le raccourci du Bureau ou le menu Démarrer.
 4. L’atelier s’ouvre directement sans PIN. Pour reprendre une version locale existante, importer son atelier avant de commencer à créer des chantiers.
@@ -31,11 +31,33 @@ Les données restent dans `%APPDATA%\OFFactory\data`. Une sauvegarde est créée
 
 Installer le pilote Windows ZPL de la Zebra GX430T et brancher l’imprimante en USB sur le même PC qu’OF FACTORY. Dans **Étiquettes**, choisir le logo et l’imprimante, puis vérifier les repères avant l’impression sur des étiquettes de **100 × 50 mm**.
 
-Les étiquettes affichent directement le chantier, le repère libre, les dimensions, les piquages et la mention Isolé / Non isolé. Le logo est agrandi de 10 %. Le compteur est masqué pour une quantité de 1 ; la désignation commerciale et le numéro OF répété en bas sont retirés.
+Les étiquettes structurées affichent directement le chantier, le repère libre, les dimensions, les piquages et la mention Isolé / Non isolé. Le logo est agrandi de 10 %. Le compteur est masqué pour une quantité de 1 ; la désignation commerciale et le numéro OF répété en bas sont retirés.
 
 Pour une quantité multiple, cocher **Un repère libre par plénum** afin de saisir un emplacement différent pour chaque exemplaire. Les compteurs **1/3, 2/3, 3/3** restent automatiques. Les nouveaux logos Midea, Mitsubishi Electric, Daikin, Toshiba et Mitsubishi Heavy Industries sont préparés en noir et blanc pour l’impression thermique.
 
 Pour retirer un logo de la bibliothèque, cliquer sur sa corbeille dans le menu **Étiquettes**, puis confirmer la suppression.
+
+## Création d’étiquettes sans nesting
+
+Ouvrir **Création d’étiquettes** depuis le menu principal et choisir une source :
+
+1. **Fichier d’étiquettes** : charger un Excel, CSV ou JSON. Depuis l’écran habituel des étiquettes du nesting, utiliser **Enregistrer le fichier Excel** ou **Enregistrer le fichier JSON** pour conserver le lot et ses repères individuels.
+2. **Lecture d’un OF** : choisir un PDF contenant du texte, puis contrôler les quantités, dimensions, piquages et isolation. Les informations non reconnues restent à compléter. Cette lecture sert uniquement aux étiquettes et ne crée pas de pièces de fabrication. Les PDF scannés nécessitent une saisie ou une conversion préalable en texte.
+3. **Saisie manuelle** : composer directement les étiquettes dans l’éditeur libre.
+
+Le tableau permet de modifier ou supprimer les lignes, de valider les lignes complètes et de sélectionner uniquement celles qui sont prêtes. Le lot est enregistré automatiquement sur le PC et inclus dans les sauvegardes de l’atelier. Excel et JSON permettent de garder plusieurs lots.
+
+### Textes et styles libres
+
+Les nouvelles étiquettes manuelles ouvrent directement l’éditeur libre. Pour personnaliser une étiquette existante, ouvrir **Modifier** puis activer **Textes et styles libres**.
+
+Tous les textes, y compris « Repère », « Dimensions », « Isolé » et le compteur, peuvent être remplacés ou supprimés. Les caractères spéciaux et les retours à la ligne sont conservés. Sélectionner des mots dans la zone de texte pour changer leur police, taille, **gras**, *italique* ou souligné ; sans sélection, le style s’applique au bloc entier. Les polices proposées sont des suggestions : un autre nom de police installée sur le PC peut être saisi.
+
+Ajouter, dupliquer ou supprimer les blocs, régler leurs positions, dimensions et alignements, puis choisir si le logo doit apparaître. Les boutons **Insérer le repère**, **Insérer le numéro** et **Insérer le total** ajoutent des valeurs variables facultatives pour chaque exemplaire.
+
+Le cadre orange indique la sélection et ne s’imprime pas. Un débordement dans le format **100 × 50 mm** doit être corrigé avant impression. L’aperçu et l’impression graphique conservent les styles choisis. Une police absente du PC est remplacée par le système.
+
+Pour conserver la mise en forme, enregistrer le lot en **Excel ou JSON**. Garder la feuille **Mise en page** du fichier Excel ; un CSV ne conserve pas les styles libres. Sur un autre PC, choisir de nouveau le logo s’il manque dans sa bibliothèque.
 
 ## Retrait de l’isolant
 
