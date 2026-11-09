@@ -2,9 +2,9 @@
 
 Application Windows pour la fabrication de plénums, la tôlerie, le dessin libre, le nesting, les étiquettes atelier et les plans d’assemblage chantier.
 
-**[Télécharger l’installateur Windows OF FACTORY 2.2.22](https://github.com/alexisriviere-ai/Offactory/releases/download/v2.2.22/OF-Factory-Setup-2.2.22.exe)**
+**[Télécharger l’installateur Windows OF FACTORY 2.2.23](https://github.com/alexisriviere-ai/Offactory/releases/download/v2.2.23/OF-Factory-Setup-2.2.23.exe)**
 
-Nouveautés de la version 2.2.22 : sélection directe des textes dans l’aperçu des étiquettes, menu déroulant conservé, bouton de validation des logos en haut et visible pendant le défilement, et demi-tour de 180° autour du raccord dans Assemblage chantier.
+Nouveautés de la version 2.2.23 : réglages de butée du tablier sur les fiches PDF de fabrication en 0,8 mm, à partir du relevé atelier. Les angles intérieurs sont convertis automatiquement ; les angles entre deux mesures affichent un encadrement sans interpolation. La table 0,6 mm est conservée pour plus tard, sans application aux fiches.
 
 **Création d’étiquettes sans nesting**, avec trois entrées : fichier Excel/CSV/JSON, lecture d’un OF PDF contenant du texte, ou saisie manuelle. L’écran habituel des étiquettes permet aussi d’enregistrer un lot en Excel ou JSON, avec ses repères individuels et ses compteurs.
 
