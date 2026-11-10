@@ -2,13 +2,13 @@
 
 Application Windows pour la fabrication de plénums, la tôlerie, le dessin libre, le nesting, les étiquettes atelier et les plans d’assemblage chantier.
 
-**[Télécharger l’installateur Windows OF FACTORY 2.2.23](https://github.com/alexisriviere-ai/Offactory/releases/download/v2.2.23/OF-Factory-Setup-2.2.23.exe)**
+**[Télécharger l’installateur Windows OF FACTORY 2.2.24](https://github.com/alexisriviere-ai/Offactory/releases/download/v2.2.24/OF-Factory-Setup-2.2.24.exe)**
 
-Nouveautés de la version 2.2.23 : réglages de butée du tablier sur les fiches PDF de fabrication en 0,8 mm, à partir du relevé atelier. Les angles intérieurs sont convertis automatiquement ; les angles entre deux mesures affichent un encadrement sans interpolation. La table 0,6 mm est conservée pour plus tard, sans application aux fiches.
+Nouveautés de la version 2.2.24 : étiquettes 100 × 50 mm avec désignation complète des plénums PLC/PLCI, retour à la ligne et adaptation automatique des blocs de texte ; menu des affaires des gaines rectangulaires, création d’une nouvelle affaire et conservation séparée de ses pièces.
 
 **Création d’étiquettes sans nesting**, avec trois entrées : fichier Excel/CSV/JSON, lecture d’un OF PDF contenant du texte, ou saisie manuelle. L’écran habituel des étiquettes permet aussi d’enregistrer un lot en Excel ou JSON, avec ses repères individuels et ses compteurs.
 
-Le mode manuel propose un **éditeur libre** : tous les textes peuvent être remplacés ou supprimés, y compris les mentions et le compteur. Police, taille, gras, italique et souligné peuvent varier dans un même texte. Ajouter, dupliquer, supprimer, positionner et aligner les blocs ; afficher ou masquer le logo. Les textes, caractères spéciaux et styles sont conservés dans l’Excel et le JSON. L’aperçu signale les débordements du format 100 × 50 mm.
+Le mode manuel propose un **éditeur libre** : tous les textes peuvent être remplacés ou supprimés, y compris les mentions et le compteur. Police, taille, gras, italique et souligné peuvent varier dans un même texte. Ajouter, dupliquer, supprimer, positionner et aligner les blocs ; afficher ou masquer le logo. Les textes, caractères spéciaux et styles sont conservés dans l’Excel et le JSON. Les blocs grandissent et décalent les suivants automatiquement ; si nécessaire, le texte est réduit pour tenir dans le format 100 × 50 mm.
 
 Également disponible : **Assemblage chantier**. Reprendre les fiches de gaines, placer leurs exemplaires et raccorder les pièces par aimantation. Perspective 3D et vues face, dessus et côté synchronisées ; rotations X/Y/Z par 45° ou 90° ; volume machine et accessoires rectangulaires ou circulaires. Les contrôles signalent les sections incompatibles, les raccords occupés et les chevauchements d’encombrement. Le plan de montage s’exporte en PDF vectoriel compressé, avec nomenclature et liaisons.
 
@@ -23,3 +23,4 @@ Les futures mises à jour utilisent ce dépôt. Elles sont téléchargées en ar
 Retrouver les versions et leurs notes dans [Releases](https://github.com/alexisriviere-ai/Offactory/releases).
 
 Le dépôt contient uniquement les éléments de distribution du logiciel ; les chantiers, les noms de clients, les paniers et les documents des utilisateurs restent sur leurs ordinateurs.
+
