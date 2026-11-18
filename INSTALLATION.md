@@ -1,10 +1,10 @@
 # Installer OF FACTORY sur plusieurs PC
 
-Version Windows 64 bits : **2.2.20**. Les installateurs sont distribués dans les [publications OF FACTORY](https://github.com/alexisriviere-ai/Offactory/releases).
+Version Windows 64 bits : **2.2.28**. Les installateurs sont distribués dans les [publications OF FACTORY](https://github.com/alexisriviere-ai/Offactory/releases).
 
 ## Sur chaque ordinateur
 
-1. Télécharger **OF-Factory-Setup-2.2.20.exe** dans les fichiers de la publication, ou copier ce même fichier sur une clé USB.
+1. Télécharger **OF-Factory-Setup-2.2.28.exe** dans les fichiers de la publication, ou copier ce même fichier sur une clé USB.
 2. Ouvrir le fichier et terminer l’installation. Aucun Node.js ni Python n’est nécessaire.
 3. Lancer **OF FACTORY** depuis le raccourci du Bureau ou le menu Démarrer.
 4. L’atelier s’ouvre directement sans PIN. Pour reprendre une version locale existante, importer son atelier avant de commencer à créer des chantiers.
@@ -39,6 +39,8 @@ Pour retirer un logo de la bibliothèque, cliquer sur sa corbeille dans le menu 
 
 ## Création d’étiquettes sans nesting
 
+Le menu **Format des étiquettes** propose **100 × 50 mm** et **100 × 150 mm**. Pour un rouleau de 100 mm de large avec une avance de 150 mm, choisir **100 × 150 mm** : le texte reste horizontal sur la largeur de 100 mm. Ce choix est enregistré dans les lots JSON et Excel, repris à leur ouverture et utilisé par l’aperçu et l’impression. Les deux lots doivent avoir le même format pour pouvoir être réunis.
+
 Ouvrir **Création d’étiquettes** depuis le menu principal et choisir une source :
 
 1. **Fichier d’étiquettes** : charger un Excel, CSV ou JSON. Depuis l’écran habituel des étiquettes du nesting, utiliser **Enregistrer le fichier Excel** ou **Enregistrer le fichier JSON** pour conserver le lot et ses repères individuels.
@@ -55,7 +57,7 @@ Tous les textes, y compris « Repère », « Dimensions », « Isolé » et le c
 
 Ajouter, dupliquer ou supprimer les blocs, régler leurs positions, dimensions et alignements, puis choisir si le logo doit apparaître. Les boutons **Insérer le repère**, **Insérer le numéro** et **Insérer le total** ajoutent des valeurs variables facultatives pour chaque exemplaire.
 
-Le cadre orange indique la sélection et ne s’imprime pas. Un débordement dans le format **100 × 50 mm** doit être corrigé avant impression. L’aperçu et l’impression graphique conservent les styles choisis. Une police absente du PC est remplacée par le système.
+Le cadre orange indique la sélection et ne s’imprime pas. Un débordement dans le format choisi, **100 × 50 mm** ou **100 × 150 mm**, doit être corrigé avant impression. L’aperçu et l’impression graphique conservent les styles choisis. Une police absente du PC est remplacée par le système.
 
 Pour conserver la mise en forme, enregistrer le lot en **Excel ou JSON**. Garder la feuille **Mise en page** du fichier Excel ; un CSV ne conserve pas les styles libres. Sur un autre PC, choisir de nouveau le logo s’il manque dans sa bibliothèque.
 

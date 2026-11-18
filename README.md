@@ -2,13 +2,13 @@
 
 Application Windows pour la fabrication de plénums, la tôlerie, le dessin libre, le nesting, les étiquettes atelier et les plans d’assemblage chantier.
 
-**[Télécharger l’installateur Windows OF FACTORY 2.2.25](https://github.com/alexisriviere-ai/Offactory/releases/download/v2.2.25/OF-Factory-Setup-2.2.25.exe)**
+**[Télécharger l’installateur Windows OF FACTORY 2.2.28](https://github.com/alexisriviere-ai/Offactory/releases/download/v2.2.28/OF-Factory-Setup-2.2.28.exe)**
 
-Nouveautés de la version 2.2.25 : pièce Cadre libre rectangulaire Metu 20 ou 30, avec quantité et fiche PDF ; gestion par affaire dans Assemblage chantier et choix de l’affaire de gaines à importer, avec conservation des assemblages précédents.
+Nouveautés de la version 2.2.28 : choix du format 100 × 50 mm ou 100 × 150 mm dans Création d’étiquettes. Le format est conservé avec le lot et ses fichiers JSON et Excel ; l’aperçu, l’éditeur et l’impression Zebra utilisent la hauteur choisie. Les anciens lots 100 × 50 mm restent utilisables.
 
 **Création d’étiquettes sans nesting**, avec trois entrées : fichier Excel/CSV/JSON, lecture d’un OF PDF contenant du texte, ou saisie manuelle. L’écran habituel des étiquettes permet aussi d’enregistrer un lot en Excel ou JSON, avec ses repères individuels et ses compteurs.
 
-Le mode manuel propose un **éditeur libre** : tous les textes peuvent être remplacés ou supprimés, y compris les mentions et le compteur. Police, taille, gras, italique et souligné peuvent varier dans un même texte. Ajouter, dupliquer, supprimer, positionner et aligner les blocs ; afficher ou masquer le logo. Les textes, caractères spéciaux et styles sont conservés dans l’Excel et le JSON. Les blocs grandissent et décalent les suivants automatiquement ; si nécessaire, le texte est réduit pour tenir dans le format 100 × 50 mm.
+Le mode manuel propose un **éditeur libre** : tous les textes peuvent être remplacés ou supprimés, y compris les mentions et le compteur. Police, taille, gras, italique et souligné peuvent varier dans un même texte. Ajouter, dupliquer, supprimer, positionner et aligner les blocs ; afficher ou masquer le logo. Les textes, caractères spéciaux et styles sont conservés dans l’Excel et le JSON. Les blocs grandissent et décalent les suivants automatiquement ; si nécessaire, le texte est réduit pour tenir dans le format choisi, 100 × 50 mm ou 100 × 150 mm.
 
 Également disponible : **Assemblage chantier**. Reprendre les fiches de gaines, placer leurs exemplaires et raccorder les pièces par aimantation. Perspective 3D et vues face, dessus et côté synchronisées ; rotations X/Y/Z par 45° ou 90° ; volume machine et accessoires rectangulaires ou circulaires. Les contrôles signalent les sections incompatibles, les raccords occupés et les chevauchements d’encombrement. Le plan de montage s’exporte en PDF vectoriel compressé, avec nomenclature et liaisons.
 
