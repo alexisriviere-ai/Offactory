@@ -1,10 +1,10 @@
 # Installer OF FACTORY sur plusieurs PC
 
-Version Windows 64 bits : **2.2.28**. Les installateurs sont distribués dans les [publications OF FACTORY](https://github.com/alexisriviere-ai/Offactory/releases).
+Version Windows 64 bits : **2.2.29**. Les installateurs sont distribués dans les [publications OF FACTORY](https://github.com/alexisriviere-ai/Offactory/releases).
 
 ## Sur chaque ordinateur
 
-1. Télécharger **OF-Factory-Setup-2.2.28.exe** dans les fichiers de la publication, ou copier ce même fichier sur une clé USB.
+1. Télécharger **OF-Factory-Setup-2.2.29.exe** dans les fichiers de la publication, ou copier ce même fichier sur une clé USB.
 2. Ouvrir le fichier et terminer l’installation. Aucun Node.js ni Python n’est nécessaire.
 3. Lancer **OF FACTORY** depuis le raccourci du Bureau ou le menu Démarrer.
 4. L’atelier s’ouvre directement sans PIN. Pour reprendre une version locale existante, importer son atelier avant de commencer à créer des chantiers.
@@ -38,6 +38,8 @@ Pour une quantité multiple, cocher **Un repère libre par plénum** afin de sai
 Pour retirer un logo de la bibliothèque, cliquer sur sa corbeille dans le menu **Étiquettes**, puis confirmer la suppression.
 
 ## Création d’étiquettes sans nesting
+
+Dans **Modifier**, le menu **Rotation du contenu** tourne le logo et tous les textes à **0°, 90°, 180° ou 270°**. La rotation est enregistrée avec le lot et ses fichiers JSON et Excel, puis appliquée à l’impression. Sur un papier physique de 100 × 150 mm, le contenu tourné à 90° se compose sur une zone de 150 × 100 mm. Les coordonnées et les zones de sélection suivent le sens choisi.
 
 Le menu **Format des étiquettes** propose **100 × 50 mm** et **100 × 150 mm**. Pour un rouleau de 100 mm de large avec une avance de 150 mm, choisir **100 × 150 mm** : le texte reste horizontal sur la largeur de 100 mm. Ce choix est enregistré dans les lots JSON et Excel, repris à leur ouverture et utilisé par l’aperçu et l’impression. Les deux lots doivent avoir le même format pour pouvoir être réunis.
 

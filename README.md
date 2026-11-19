@@ -2,9 +2,9 @@
 
 Application Windows pour la fabrication de plénums, la tôlerie, le dessin libre, le nesting, les étiquettes atelier et les plans d’assemblage chantier.
 
-**[Télécharger l’installateur Windows OF FACTORY 2.2.28](https://github.com/alexisriviere-ai/Offactory/releases/download/v2.2.28/OF-Factory-Setup-2.2.28.exe)**
+**[Télécharger l’installateur Windows OF FACTORY 2.2.29](https://github.com/alexisriviere-ai/Offactory/releases/download/v2.2.29/OF-Factory-Setup-2.2.29.exe)**
 
-Nouveautés de la version 2.2.28 : choix du format 100 × 50 mm ou 100 × 150 mm dans Création d’étiquettes. Le format est conservé avec le lot et ses fichiers JSON et Excel ; l’aperçu, l’éditeur et l’impression Zebra utilisent la hauteur choisie. Les anciens lots 100 × 50 mm restent utilisables.
+Nouveautés de la version 2.2.29 : rotation du contenu des étiquettes à 0°, 90°, 180° ou 270°, logo compris. Le sens choisi est conservé dans les lots JSON et Excel ainsi qu’à l’impression. Les formats 100 × 50 mm et 100 × 150 mm restent disponibles.
 
 **Création d’étiquettes sans nesting**, avec trois entrées : fichier Excel/CSV/JSON, lecture d’un OF PDF contenant du texte, ou saisie manuelle. L’écran habituel des étiquettes permet aussi d’enregistrer un lot en Excel ou JSON, avec ses repères individuels et ses compteurs.
 
