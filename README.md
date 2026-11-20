@@ -2,7 +2,9 @@
 
 Application Windows pour la fabrication de plénums, la tôlerie, le dessin libre, le nesting, les étiquettes atelier et les plans d’assemblage chantier.
 
-**[Télécharger l’installateur Windows OF FACTORY 2.2.29](https://github.com/alexisriviere-ai/Offactory/releases/download/v2.2.29/OF-Factory-Setup-2.2.29.exe)**
+**[Télécharger l’installateur Windows OF FACTORY 2.2.30](https://github.com/alexisriviere-ai/Offactory/releases/download/v2.2.30/OF-Factory-Setup-2.2.30.exe)**
+
+Dans le lecteur devis et OF, la version 2.2.30 interprète **CS3** comme un plénum de grille à piquage axial et **CS4** comme un plénum de grille à piquage latéral. Le suffixe **-I** indique une version isolée. [Voir la version et son correctif source](https://github.com/alexisriviere-ai/Offactory/releases/tag/v2.2.30).
 
 Nouveautés de la version 2.2.29 : rotation du contenu des étiquettes à 0°, 90°, 180° ou 270°, logo compris. Le sens choisi est conservé dans les lots JSON et Excel ainsi qu’à l’impression. Les formats 100 × 50 mm et 100 × 150 mm restent disponibles.
 
