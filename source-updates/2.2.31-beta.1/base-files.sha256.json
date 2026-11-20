@@ -1,0 +1,27 @@
+{
+  "baseVersion": "2.2.30",
+  "normalization": "CRLF to LF; SHA-256 of preimage UTF-8 bytes; null = new file",
+  "files": {
+    "EVOLUTION-CLIENTS-CHANTIERS.md": null,
+    "package-lock.json": "daaecbdb192036e37ae84705f6122ad7944776a1af163c82fa61544fac163d2d",
+    "package.json": "09c1c164f9248fd948ec4fb76e858925b815644e837d4a9cdec4dc51265d078b",
+    "public/gaine-rectangulaire/app.mjs": "3bacee23748ecbe0a0214491e9b8c3d4155d433fe803b07b694e9ab9e8b5873d",
+    "public/gaine-rectangulaire/coherence.mjs": null,
+    "public/gaine-rectangulaire/engine.mjs": "dda0dfcc37b71bd217c874583218a158ca60df082fd00e49211bee0ab2c58788",
+    "public/gaine-rectangulaire/index.html": "890b8b1be364e8a35c86216a3a275ce1fd797350e3455a916b114c53487ffea4",
+    "public/gaine-rectangulaire/organization.css": null,
+    "public/gaine-rectangulaire/organization.mjs": null,
+    "public/gaine-rectangulaire/part-order.mjs": null,
+    "public/gaine-rectangulaire/purchase-ui.mjs": "6c591d1fae39bdc59b0c3277ccb3d9f17ec5739e483a05c5d0bf80ba2e8afc06",
+    "scripts/audit-test-pdfs.py": null,
+    "scripts/test-organization-ui.mjs": null,
+    "server/local-api.mjs": "c3e7585fdf089fa0c56976b88a690763c965b1af0352378a6e71df9ea2dc6eb9",
+    "server/work-organization.mjs": null,
+    "server/work-organization.test.mjs": null,
+    "src/lib/assembly/model.mjs": "9c14f2a4538534e9d804c9ac675913ea025db7fc4300322c6b06c0d44faace79",
+    "src/lib/assembly/part-pdf.mjs": null,
+    "src/lib/assembly/pdf.mjs": "dfe24051bc2c22ddce8dab3f3776944c88d7873743399582277675db95e71ca5",
+    "src/pages/AssemblyWorkshop.jsx": "f2bc8b0aaa7ed0e25a0adc3d4b68cdb6306b4eab3d70eb5879805df340f1a219",
+    "src/pages/RectangularDuct.jsx": "05d59028a11879ecc811f6ebff103fe83e8b7a6a18090f61376970a20b0a6e9a"
+  }
+}

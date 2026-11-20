@@ -1,0 +1,1086 @@
+diff --git a/EVOLUTION-CLIENTS-CHANTIERS.md b/EVOLUTION-CLIENTS-CHANTIERS.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..960ef86dec04bc62cd89f3e3456f6b5e867c323e
+--- /dev/null
++++ b/EVOLUTION-CLIENTS-CHANTIERS.md
+@@ -0,0 +1,94 @@
++# OFactory 2.2.31-beta.1 — compte rendu de développement
++
++Base : copie locale des sources 2.2.30, provenant du dossier de travail `workshop-2.2.13` (son nom historique ne correspond plus à la version du package). Le dépôt GitHub public `alexisriviere-ai/Offactory`, examiné à partir du commit `483418b`, contient la distribution et sa documentation, pas les sources de l’application. La branche de revue fournit donc un **correctif source applicable à la base 2.2.30**, avec contrôle préalable, plutôt qu’une publication intégrale des sources, des catalogues ou des matrices commerciales.
++
++## Fonctionnalités réalisées
++
++- Formulaire commun aux deux modules : client existant ou nouveau, chantier existant ou nouveau et nom facultatif de fabrication. Entrée et bouton utilisent le même traitement. Échap annule. La fenêtre reste ouverte en cas d’échec. La transaction serveur et son identifiant de requête empêchent les créations répétées.
++- Registre persistant commun clients → chantiers → fabrications ; filtrage par client et chantier, dates de création et de modification visibles. Plusieurs chantiers par client et plusieurs fabrications par chantier. Les noms identiques normalisés sont réutilisés ; une case explicite autorise une raison sociale réellement distincte et les homonymes sont différenciés par un extrait d’identifiant.
++- Les deux modules ouvrent les mêmes fabrications. Le premier passage vers Assemblage reprend les fiches et leurs identifiants. La réouverture actualise l’inventaire et son ordre ; les pièces déjà placées, leurs positions, dimensions et connexions ne sont pas recalculées automatiquement.
++- Boutons gauche/droite pour la pièce sélectionnée. Le tableau sauvegardé porte l’ordre et les exports PDF, JSON, CSV et inventaires le suivent. Aucune cote n’est changée et aucun raccord n’est créé par le déplacement.
++- Contrôle dimensionnel facultatif BÊTA séparé des calculs de fabrication : coude transformé possible, sections incompatibles sur une liaison explicitement enregistrée, section très atypique parmi un groupe suffisamment homogène de gaines droites. Détails, cotes et champs à vérifier ; pictogrammes ; avertissements ignorables ; état daté conservé. Une modification dimensionnelle invalide le contrôle. Dans Assemblage, une modification des raccords l’invalide également.
++- Export supplémentaire de vues statiques par pièce, A4 paysage, entièrement vectoriel et compressé : trois pièces simples ou deux pièces complexes par page ; trois ou quatre vues selon la famille. Géométries partagées avec Assemblage, notamment pour les profils de coudes et les transitions rectangle/rond. Les traits de facettisation lisses des coudes ne sont pas imprimés comme des plis.
++- Les fiches détaillées conservent leurs cotes et leur composition. Client, chantier et dates sont ajoutés aux documents ; le CSV achat reçoit aussi les identités. Aucun objet 3D interactif, capture haute résolution ou image lourde n’est intégré.
++
++## Persistance et migration
++
++La base reste `data/database.json`. Le registre ajoute `OfClients`, `OfSites`, `OfFabrications` et `OrganizationVersion`, sans supprimer les anciennes collections. Les relations utilisent des UUID et les fabrications possèdent des liens vers les identifiants et clés des documents de chaque module. Les documents nouvellement rattachés portent aussi `organization` pour les exports JSON.
++
++La migration est idempotente et réalisée dans la file de transactions existante, avec écriture temporaire puis renommage atomique. Avant la première transaction migrée, une copie non écrasable du fichier précédent est créée : `data/database.before-organization-v1.json`. Les sauvegardes complètes de l’atelier conservent les nouvelles données.
++
++Les anciennes affaires sont conservées séparément et marquées « À attribuer ». Deux anciennes clés `main`, une par module, ne sont jamais supposées être la même fabrication. Aucune identité client ou chantier n’est déduite d’un ancien libellé. Une date ancienne connue est conservée ; une date absente reste inconnue. Le bouton « Attribuer client / chantier » permet la correction manuelle et enregistre d’abord les modifications en attente. Les anciennes pièces et leurs caractéristiques ne sont pas réécrites par la migration.
++
++## Principaux fichiers
++
++| Fichiers | Rôle |
++| --- | --- |
++| `server/work-organization.mjs`, `server/local-api.mjs` | Migration, registre, transactions, liaison des modules et création idempotente |
++| `public/gaine-rectangulaire/organization.mjs`, `organization.css` | Navigation et formulaire partagés |
++| `public/gaine-rectangulaire/app.mjs`, `index.html` | Intégration des affaires, ordre manuel et interface BÊTA |
++| `public/gaine-rectangulaire/part-order.mjs`, `coherence.mjs` | Modules indépendants d’ordre et de contrôle |
++| `src/pages/AssemblyWorkshop.jsx`, `RectangularDuct.jsx` | Intégration Assemblage et échange sécurisé avec le module embarqué |
++| `src/lib/assembly/part-pdf.mjs` | Nouvel export de vues isolées utilisant le moteur existant |
++| `src/lib/assembly/model.mjs`, `pdf.mjs` | Conservation des identités et de l’ordre ; en-têtes |
++| `public/gaine-rectangulaire/engine.mjs`, `purchase-ui.mjs` | Ajout des identités aux documents, sans modification des formules |
++| `server/work-organization.test.mjs`, `scripts/test-organization-ui.mjs`, `scripts/audit-test-pdfs.py` | Tests et contrôle des PDF |
++| `package.json`, `package-lock.json` | Version de travail 2.2.31-beta.1 ; aucune dépendance de production ajoutée |
++
++## Validation effectuée
++
++- `npm test` : **249 tests réussis**, dont 243 tests existants et 6 nouveaux tests regroupant les cas de migration, dates, créations répétées, ordre, contrôle dimensionnel et PDF.
++- Tests ciblés gaines/assemblage/organisation : **29 réussis**.
++- `npm run build` : compilation réussie. Avertissements Vite de taille des bundles et d’imports statiques/dynamiques conservés ; aucun échec de compilation.
++- `npm run lint` : réussi.
++- Tests réels dans Edge sans fenêtre, sur une base temporaire : **14 scénarios réussis**, aucune erreur JavaScript. Entrée dans les deux modules, souris, Échap, validations répétées, échec de sauvegarde simulé et reprise, plusieurs chantiers/fabrications, avertissement ignoré, attribution manuelle d’une ancienne affaire, ordre et dates après rechargement, liens communs entre modules et téléchargement effectif des deux PDF.
++- Audit des cinq PDF de test : pages contenant texte et tracés vectoriels, aucune image raster, pas de page blanche ou texte hors page détecté, repères de l’export navigateur dans l’ordre coude puis gaine. Les bornes numériques de toutes les vues de l’échantillon sont également testées. Toutes les pages des exemples par famille ont été rendues ; les mises en page simples, complexes et détaillées ont été revues visuellement.
++
++| PDF de test | Pièces | Pages | Octets | Taille décimale approximative |
++| --- | ---: | ---: | ---: | ---: |
++| Vues 3D, 12 familles | 12 | 5 | 36 636 | 36,6 ko |
++| Vues 3D, lot de 100 pièces complexes | 100 | 50 | 772 519 | 0,773 Mo |
++| Fiches détaillées, 12 familles | 12 | 12 | 41 282 | 41,3 ko |
++| Vues 3D téléchargées par l’interface | 2 | 1 | 10 628 | 10,6 ko |
++| Fiches détaillées téléchargées par l’interface | 2 | 2 | 7 949 | 7,9 ko |
++
++Les mesures peuvent varier légèrement avec la date d’édition et les libellés. Aucun test d’impression sur une imprimante physique ni d’envoi à un serveur de messagerie n’a été effectué.
++
++## Limites de la BÊTA
++
++Un coude de sections différentes est une **suspicion**, car le modèle ne distingue pas une intention « égal » d’une intention « transformé ». Une incompatibilité de sections n’est signalée comme telle que sur une liaison connue, avec les sections fournies par le moteur d’assemblage et sa tolérance existante. L’ordre du listing n’est jamais utilisé pour inventer une connexion.
++
++Le contrôle atypique se limite aux gaines droites : au moins cinq éléments, dont au moins 75 % proches de la surface médiane ; seuls les rapports extrêmes de surface supérieurs à neuf sont suggérés. Aucun débit, dimensionnement aéraulique, supportage ou conformité réglementaire n’est déduit. Les plans PDF sont des représentations de compréhension, sans calcul d’occultation photoréaliste. La vérification est un état à un instant donné : après une modification de l’assemblage dans un autre écran, relancer le contrôle dans Fabrication pour y examiner les nouvelles connexions.
++
++Une ancienne fabrication et un ancien assemblage restent deux archives distinctes tant qu’un lien explicite n’a pas été établi. Leur attribution au même client/chantier ne fusionne pas leurs contenus. La reprise d’une fabrication dans Assemblage conserve les anciens assemblages séparés et ne les écrase pas.
++
++## Reproduire les vérifications
++
++Depuis les sources de l’application après application du correctif :
++
++```powershell
++npm ci
++npm test
++npm run build
++npm run lint
++```
++
++Pour le navigateur, installer Playwright dans l’environnement de développement, puis exécuter `node scripts/test-organization-ui.mjs`. Le script accepte `OF_PLAYWRIGHT_MODULE` (chemin vers `playwright/index.mjs`) et `OF_BROWSER_EXECUTABLE` (chemin vers Edge ou Chromium). Exemple Windows :
++
++```powershell
++$env:OF_BROWSER_EXECUTABLE = 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
++node scripts/test-organization-ui.mjs
++```
++
++Pour l’audit complémentaire : installer PyMuPDF dans l’environnement de test, puis `python scripts/audit-test-pdfs.py`. Les PDF et résultats sont générés dans `test-artifacts/`, avec uniquement des données fictives. Ces dépendances de test ne sont pas intégrées au logiciel Windows.
++
++## Préparation et déploiement Windows
++
++1. **Faire une copie du dossier complet des sources 2.2.30**, puis appliquer le correctif de la branche de revue avec `git apply --check chemin\ofactory-2.2.31-beta.1.patch`, puis `git apply chemin\ofactory-2.2.31-beta.1.patch`. Arrêter si le contrôle signale une base différente ; ne pas forcer une application partielle. Ne pas appliquer ce patch au petit dépôt de distribution seul.
++2. Exécuter les tests et la compilation ci-dessus dans cette copie. Le code modifié est déjà disponible dans la copie de développement livrée avec le rapport.
++3. Sur le poste de construction Windows, exécuter `npm run dist:win` après validation de la BÊTA. Cette commande prépare un installateur **sans publication** (`--publish never` dans le script existant). L’installateur n’a pas été fabriqué pendant cette mission.
++4. Sur un poste pilote, fermer OFactory et sauvegarder `%APPDATA%\OFFactory\data` et le dossier de sauvegardes complet. Installer la BÊTA manuellement ; conserver le même dossier de données. Vérifier les affaires migrées puis attribuer leurs clients/chantiers lorsque nécessaire. Contrôler une impression réelle à l’échelle usuelle.
++5. Faire valider le poste pilote et la BÊTA avant toute distribution aux autres postes. Les bases restent locales à chaque PC ; cette évolution ne crée pas de synchronisation réseau.
++6. Pour un retour arrière, fermer l’application et restaurer la sauvegarde complète prise avant essai. Ne pas remplacer seulement la base par l’instantané de migration si des fabrications ont été ajoutées depuis : conserver aussi ces nouvelles données pour leur récupération.
++
++Aucune release GitHub, mise à jour automatique de production, installation sur un poste utilisateur ou fusion sur `main` n’est effectuée par ce correctif.
+diff --git a/package-lock.json b/package-lock.json
+index 13049c6fa391aa40291e71c725eeb4dc9a8ad902..f608a0c28f13f6c9034c7261d201b953bcbf505e 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -1,12 +1,12 @@
+ {
+   "name": "of-factory",
+-  "version": "2.2.30",
++  "version": "2.2.31-beta.1",
+   "lockfileVersion": 3,
+   "requires": true,
+   "packages": {
+     "": {
+       "name": "of-factory",
+-      "version": "2.2.30",
++      "version": "2.2.31-beta.1",
+       "dependencies": {
+         "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
+         "@hello-pangea/dnd": "^17.0.0",
+diff --git a/package.json b/package.json
+index 25134686755645cdee64a4ebc5b0e919cfce722a..bd332dcc7f50f94449723ecd49bf5f4c9b123156 100644
+--- a/package.json
++++ b/package.json
+@@ -1,7 +1,7 @@
+ {
+   "name": "of-factory",
+   "private": true,
+-  "version": "2.2.30",
++  "version": "2.2.31-beta.1",
+   "type": "module",
+   "scripts": {
+     "dev": "vite --configLoader native",
+diff --git a/public/gaine-rectangulaire/app.mjs b/public/gaine-rectangulaire/app.mjs
+index f79774b3db6823fec51a666a6cce5d9d3952384e..e9fddf1665eca170003385972e515486e1f4383b 100644
+--- a/public/gaine-rectangulaire/app.mjs
++++ b/public/gaine-rectangulaire/app.mjs
+@@ -2,6 +2,9 @@ import {TYPES,FIELDS,newPart,cadreCount,values,errors,fmt,sizeLabel,sheet,toSvg,
+ import {createOfFactoryStorage} from './storage.mjs';
+ import {validatePurchaseDocument,upgradePurchaseDocument} from './purchase.mjs';
+ import {mountPurchase} from './purchase-ui.mjs';
++import {mountOrganization} from './organization.mjs';
++import {movePart} from './part-order.mjs';
++import {coherenceFingerprint} from './coherence.mjs';
+ const $=id=>document.getElementById(id),CADRES=['P1','CF20','CL20','CF30','CL30','Fond','Sans cadre','Personnalisé'];
+ let storage=createOfFactoryStorage(),affaireKey='main',switching=false;
+ const initial=()=>({version:1,meta:{company:'F.A.B.',activity:'Tôlerie - Ventilation',reference:''},parts:[newPart()],selected:null});
+@@ -15,16 +18,16 @@ function ask(message){return new Promise(resolve=>{const dialog=$('confirm-dialo
+ function toast(msg){clearTimeout(toastTimer);$('toast').textContent=msg;$('toast').hidden=false;toastTimer=setTimeout(()=>$('toast').hidden=true,5000);}
+ function persist(){lastPdf=null;clearTimeout(saveTimer);if(loadFailed)return;const version=++saveVersion,snapshot=JSON.parse(JSON.stringify(state));$('save-state').textContent='Enregistrement…';saveTimer=setTimeout(()=>{storage.save(snapshot).then(()=>{if(version===saveVersion){$('save-state').textContent='Enregistré dans OF FACTORY';$('storage-error').hidden=true;}}).catch(error=>{$('save-state').textContent='Enregistrement non terminé';$('storage-error').hidden=false;$('storage-error-text').textContent=error.message;});},180);}
+ function summary(p){const d=p.dims;return p.type==='cadreLibre'?`${fmt(d.A)} × ${fmt(d.B)} · ${p.cadres[0]}`:['bouchon','bouchonGrillage'].includes(p.type)?`${fmt(d.A)} × ${fmt(d.B)} · HT ${fmt(d.HT)}`:p.type==='piquage'?`${fmt(d.A)} × ${fmt(d.B)} · C ${fmt(d.C)}`:p.type==='manchette'?`${fmt(d.A)} × ${fmt(d.B)} · P ${fmt(d.P)}`:p.type==='gaine'?`${fmt(d.A)} × ${fmt(d.B)} · L ${fmt(d.Lg)}`:p.type==='reduction'?`${fmt(d.A)} × ${fmt(d.B)} / ${fmt(d.C)} × ${fmt(d.D)}`:p.type==='transfo'?`${fmt(d.A)} × ${fmt(d.B)} / Ø ${fmt(d.Diam)}`:p.type==='deport'?`Déport ${fmt(d.C)} · L ${fmt(d.Lg)}`:p.type==='te'?`A ${fmt(d.A)} · profondeur ${fmt(d.D)}`:`${p.type==='coude90'?90:fmt(d.Angle)}° · ${fmt(d.A)} × ${fmt(d.C)}`;}
+-function renderList(){const container=$('pieces');container.replaceChildren();state.parts.forEach(p=>{const button=document.createElement('button');button.type='button';button.className='piece'+(p.id===state.selected?' active':'')+(errors(p).length?' invalid':'');button.setAttribute('aria-pressed',String(p.id===state.selected));const icon=document.createElement('span');icon.className='piece-icon';icon.textContent=({cadreLibre:'□',bouchon:'▰',bouchonGrillage:'▦',piquage:'□',gaine:'▱',manchette:'▥',reduction:'⋈',transfo:'○',deport:'⌁',te:'T',coude:'∟',coude90:'∟'}[p.type]);icon.setAttribute('aria-hidden','true');const text=document.createElement('span');text.className='piece-text';const strong=document.createElement('strong');strong.textContent=p.repere||'Sans repère';const small=document.createElement('small');small.textContent=summary(p);text.append(strong,small);const qty=document.createElement('span');qty.className='piece-qty';qty.textContent='× '+p.qty;button.append(icon,text,qty);button.addEventListener('click',()=>{state.selected=p.id;render();persist();});container.append(button);});$('piece-count').textContent=state.parts.length;$('export').textContent=`Exporter ${state.parts.length||0} fiche${state.parts.length===1?'':'s'} en PDF`;$('export').disabled=!state.parts.length;purchase.render();}
++function renderList(){const container=$('pieces');container.replaceChildren();state.parts.forEach(p=>{const button=document.createElement('button');button.type='button';button.className='piece'+(p.id===state.selected?' active':'')+(errors(p).length?' invalid':'');button.setAttribute('aria-pressed',String(p.id===state.selected));const icon=document.createElement('span');icon.className='piece-icon';icon.textContent=({cadreLibre:'□',bouchon:'▰',bouchonGrillage:'▦',piquage:'□',gaine:'▱',manchette:'▥',reduction:'⋈',transfo:'○',deport:'⌁',te:'T',coude:'∟',coude90:'∟'}[p.type]);icon.setAttribute('aria-hidden','true');const text=document.createElement('span');text.className='piece-text';const strong=document.createElement('strong');strong.textContent=p.repere||'Sans repère';const small=document.createElement('small');small.textContent=summary(p);text.append(strong,small);const qty=document.createElement('span');qty.className='piece-qty';qty.textContent='× '+p.qty;button.append(icon,text,qty);const warnings=activeWarnings().filter(w=>w.partId===p.id);if(warnings.length){const badge=document.createElement('span');badge.textContent=' ⚠';badge.title=warnings.map(w=>w.reason).join(' ');badge.setAttribute('role','button');badge.setAttribute('aria-label','Afficher les avertissements de '+p.repere);badge.onclick=e=>{e.stopPropagation();showWarnings(p.id);};button.append(badge);}button.addEventListener('click',()=>{state.selected=p.id;render();persist();});container.append(button);});$('piece-count').textContent=state.parts.length;$('export').textContent=`Exporter ${state.parts.length||0} fiche${state.parts.length===1?'':'s'} en PDF`;$('export').disabled=!state.parts.length;purchase.render();$('move-left').disabled=state.parts.findIndex(p=>p.id===state.selected)<=0;$('move-right').disabled=!current()||state.parts.findIndex(p=>p.id===state.selected)>=state.parts.length-1;}
+ function option(select,label,value=label){const el=document.createElement('option');el.value=value;el.textContent=label;select.append(el);}
+ Object.entries(TYPES).forEach(([key,name])=>{option($('type'),name,key);const b=document.createElement('button');b.type='button';b.textContent=name;const sub=document.createElement('span');sub.textContent=FIELDS[key].filter(f=>!['R','M','T'].includes(f.key)).map(f=>f.key==='Diam'?'Ø':f.key).join(' · ');b.append(sub);b.addEventListener('click',()=>{addPart(key);$('add-dialog').close();});$('type-choices').append(b);});
+ ['cadre1','cadre2','cadre3'].forEach(id=>CADRES.forEach(v=>option($(id),v)));
+ function renderDimensions(p){$('dimensions').replaceChildren();for(const f of FIELDS[p.type]){const label=document.createElement('label');label.textContent=f.label+(f.key==='Angle'?' (°)':'');const inp=document.createElement('input');inp.type='number';inp.min=f.min;inp.max=f.max;inp.step='any';inp.value=Number.isFinite(p.dims[f.key])?p.dims[f.key]:'';inp.dataset.key=f.key;inp.id='dim-'+f.key;label.append(inp);$('dimensions').append(label);}$('center').hidden=!['reduction','transfo'].includes(p.type);$('geometry-help').textContent=({cadreLibre:'A / B : dimensions de passage du cadre rectangulaire. Choisissez Metu 20 (CL20) ou Metu 30 (CL30).',bouchon:'A / B : dimensions de passage. HT : hauteur du bouchon, 30 mm par défaut. P1 est un type de cadre / profil.',bouchonGrillage:'Fond grillagé. HT : hauteur du bouchon, 30 mm par défaut. P1 est un type de cadre / profil. Maillage représenté schématiquement.',piquage:'A / B : dimensions de passage. C : profondeur du piquage. BT : bord tombé, 20 mm par défaut. P1 est un type de cadre / profil.',manchette:'A : largeur du passage. B : hauteur du passage. P : profondeur entre les deux cadres. Les plis sont représentés schématiquement.',gaine:'Cotes intérieures. Longueur mesurée entre les deux extrémités.',reduction:'F et G positionnent la sortie par rapport à l’entrée. Les valeurs peuvent être négatives. H et I sont calculés.',transfo:'C et D positionnent le rond dans le rectangle. La manchette M est comprise dans la longueur E.',coude90:'D / E : longueurs droites d’entrée et de sortie. R = 0 : intérieur à angle droit, extérieur en courbe.',coude:'L’angle est la déviation de l’axe. D / E : talons droits. R = 0 : angle intérieur droit.',deport:'C positif décale la sortie vers le bas. C négatif la décale vers le haut. Lg est la longueur axiale.',te:'H est calculé pour fermer la chaîne B + G = C + H. T règle la partie droite du piquage.'})[p.type];}
+ function renderDerived(p){const d=values(p);$('derived').textContent=p.type==='reduction'?`H = ${fmt(d.H)} mm · I = ${fmt(d.I)} mm`:p.type==='transfo'?`F = ${fmt(d.F)} mm · G = ${fmt(d.G)} mm`:p.type==='te'?`H = ${fmt(d.H)} mm`:'';}
+ function renderCustomCadres(p){$('custom-cadres').replaceChildren();p.cadres.slice(0,cadreCount(p)).forEach((c,i)=>{if(CADRES.includes(c)&&c!=='Personnalisé')return;const label=document.createElement('label');label.textContent=`Libellé cadre ${i+1}`;const inp=document.createElement('input');inp.maxLength=30;inp.value=c==='Personnalisé'?'':c;inp.placeholder='Ex. BT 40 mm';inp.addEventListener('input',()=>{p.cadres[i]=inp.value;changed();});label.append(inp);$('custom-cadres').append(label);});}
+-function render(){const selectedOption=$('affaire').selectedOptions[0];if(selectedOption)selectedOption.textContent=state.meta.reference.trim()||'Affaire sans nom';const p=current();for(const k of ['reference','company','activity'])$(k).value=state.meta[k];renderList();$('form').hidden=!p;$('empty').hidden=!!p;$('duplicate').disabled=!p;$('remove-top').disabled=!p;if(!p){$('preview').innerHTML='';$('preview-title').textContent='Aucune pièce';$('page-number').textContent='0 / 0';return;}for(const k of ['repere','qty','matiere','epaisseur','isolation','notes','type'])$(k).value=p[k];$('cadre1').replaceChildren();(p.type==='cadreLibre'?['CL20','CL30']:CADRES).forEach(v=>option($('cadre1'),p.type==='cadreLibre'?(v==='CL20'?'Metu 20 — CL20':'Metu 30 — CL30'):v,v));['cadre1','cadre2','cadre3'].forEach((id,i)=>$(id).value=CADRES.includes(p.cadres[i])?p.cadres[i]:'Personnalisé');$('cadre2-label').hidden=cadreCount(p)<2;$('cadre3-label').hidden=cadreCount(p)<3;renderDimensions(p);renderCustomCadres(p);renderDerived(p);renderPreview();}
+-function renderPreview(){const p=current();if(!p)return;const es=errors(p);$('validation').hidden=!es.length;$('validation').textContent=es.join(' ');$('preview-title').textContent=TYPES[p.type];$('page-number').textContent=`${state.parts.indexOf(p)+1} / ${state.parts.length}`;if(es.length){const div=document.createElement('div');div.className='preview-error';div.textContent='Complète les dimensions pour afficher la fiche. '+es[0];$('preview').replaceChildren(div);$('weight').textContent='Dimensions à compléter';return;}$('preview').innerHTML=toSvg(sheet(p,state.meta,state.parts.indexOf(p)+1,state.parts.length),`Fiche de fabrication ${p.repere}`);clearTimeout(weightTimer);weightTimer=setTimeout(()=>{if(state.parts.some(p=>errors(p).length)){$('weight').textContent='Pièce à compléter';return;}try{lastPdf=makePdf(state.parts,state.meta,window.jspdf.jsPDF);$('weight').textContent=`${state.parts.length} page${state.parts.length>1?'s':''} · ${sizeLabel(lastPdf.output('arraybuffer').byteLength)}`;}catch{$('weight').textContent='';}},state.parts.length>200?1200:450);}
+-function changed(){persist();renderList();if(current()){renderDerived(current());renderPreview();}}
++function render(){const p=current();for(const k of ['reference','company','activity'])$(k).value=state.meta[k];renderList();$('form').hidden=!p;$('empty').hidden=!!p;$('duplicate').disabled=!p;$('remove-top').disabled=!p;if(!p){$('preview').innerHTML='';$('preview-title').textContent='Aucune pièce';$('page-number').textContent='0 / 0';return;}for(const k of ['repere','qty','matiere','epaisseur','isolation','notes','type'])$(k).value=p[k];$('cadre1').replaceChildren();(p.type==='cadreLibre'?['CL20','CL30']:CADRES).forEach(v=>option($('cadre1'),p.type==='cadreLibre'?(v==='CL20'?'Metu 20 — CL20':'Metu 30 — CL30'):v,v));['cadre1','cadre2','cadre3'].forEach((id,i)=>$(id).value=CADRES.includes(p.cadres[i])?p.cadres[i]:'Personnalisé');$('cadre2-label').hidden=cadreCount(p)<2;$('cadre3-label').hidden=cadreCount(p)<3;renderDimensions(p);renderCustomCadres(p);renderDerived(p);renderPreview();}
++function renderPreview(){const p=current();if(!p)return;const es=errors(p);$('validation').hidden=!es.length;$('validation').textContent=es.join(' ');$('preview-title').textContent=TYPES[p.type];$('page-number').textContent=`${state.parts.indexOf(p)+1} / ${state.parts.length}`;if(es.length){const div=document.createElement('div');div.className='preview-error';div.textContent='Complète les dimensions pour afficher la fiche. '+es[0];$('preview').replaceChildren(div);$('weight').textContent='Dimensions à compléter';return;}$('preview').innerHTML=toSvg(sheet(p,exportMeta(),state.parts.indexOf(p)+1,state.parts.length),`Fiche de fabrication ${p.repere}`);clearTimeout(weightTimer);weightTimer=setTimeout(()=>{if(state.parts.some(p=>errors(p).length)){$('weight').textContent='Pièce à compléter';return;}try{lastPdf=makePdf(state.parts,exportMeta(),window.jspdf.jsPDF);$('weight').textContent=`${state.parts.length} page${state.parts.length>1?'s':''} · ${sizeLabel(lastPdf.output('arraybuffer').byteLength)}`;}catch{$('weight').textContent='';}},state.parts.length>200?1200:450);}
++function changed(){updateCheckState();persist();renderList();if(current()){renderDerived(current());renderPreview();}}
+ function addPart(type){if(state.parts.length>=2000){toast('Le chantier est limité à 2 000 repères.');return;}const p=newPart(type,state.parts.length+1);state.parts.push(p);state.selected=p.id;render();persist();}
+ $('form').addEventListener('submit',e=>e.preventDefault());
+ $('dimensions').addEventListener('input',e=>{const key=e.target.dataset.key;if(!key)return;current().dims[key]=e.target.value===''?null:Number(e.target.value);changed();});
+@@ -43,41 +46,45 @@ const filename=s=>(s||'atelier').replace(/[^\p{L}\p{N}_-]+/gu,'-').slice(0,60);
+ $('save-project').addEventListener('click',async()=>{try{await download(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),`chantier-${filename(state.meta.reference)}.json`);toast('Chantier sauvegardé.');}catch(error){toast(error.message);}});
+ $('open-project').addEventListener('click',()=>$('file-input').click());
+ $('file-input').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>15000000)throw Error('Fichier trop volumineux (maximum 15 Mo).');const next=validateFile(JSON.parse(await file.text()));if(state.parts.length&&!await ask('Ouvrir ce fichier remplace le chantier affiché. Sauvegarde-le d’abord si nécessaire. Continuer ?'))return;state=next;state.selected=state.parts[0]?.id;render();persist();toast(`${state.parts.length} pièce(s) chargée(s).`);}catch(err){toast(err.message);}finally{e.target.value='';}});
+-$('export').addEventListener('click',async()=>{const invalid=state.parts.find(p=>errors(p).length);if(invalid){state.selected=invalid.id;render();toast('Complète les dimensions de '+invalid.repere+'.');return;}$('export').disabled=true;$('export').textContent='Génération du PDF…';await new Promise(r=>setTimeout(r,20));try{const pdf=lastPdf||makePdf(state.parts,state.meta,window.jspdf.jsPDF),blob=pdf.output('blob');await download(blob,`fiches-${filename(state.meta.reference)}.pdf`);toast(`${state.parts.length} fiches exportées · ${sizeLabel(blob.size)}`);}catch(err){toast(err.message);}finally{renderList();}});
++$('export').addEventListener('click',async()=>{const invalid=state.parts.find(p=>errors(p).length);if(invalid){state.selected=invalid.id;render();toast('Complète les dimensions de '+invalid.repere+'.');return;}$('export').disabled=true;$('export').textContent='Génération du PDF…';await new Promise(r=>setTimeout(r,20));try{const pdf=lastPdf||makePdf(state.parts,exportMeta(),window.jspdf.jsPDF),blob=pdf.output('blob');await download(blob,`fiches-${filename(state.meta.reference)}.pdf`);toast(`${state.parts.length} fiches exportées · ${sizeLabel(blob.size)}`);}catch(err){toast(err.message);}finally{renderList();}});
+ 
+-async function refreshAffaires(){
+-  const rows=await storage.list();$('affaire').replaceChildren();
+-  for(const row of rows)option($('affaire'),row.name,row.workspaceKey);
+-  if(!rows.some(row=>row.workspaceKey===affaireKey))option($('affaire'),state.meta.reference.trim()||'Affaire sans nom',affaireKey);
+-  $('affaire').value=affaireKey;
++function makeDocument(name){
++  const next=initial();next.parts=[];next.meta={...state.meta,reference:name};
++  if(state.purchase?.settings)next.purchase={rulesVersion:2,settings:structuredClone(state.purchase.settings),transportMode:'auto',transportAmount:null};
++  return next;
+ }
+-async function changeAffaire(key,next){
+-  if(switching)return;
+-  switching=true;$('affaire').disabled=true;$('new-affaire').disabled=true;
+-  clearTimeout(saveTimer);++saveVersion;
+-  const locked=[...document.querySelectorAll('.workspace,.topbar .actions'),$('reference').closest('.projectbar')];
+-  locked.forEach(el=>el.inert=true);
++function exportMeta(){return {...state.meta,clientName:state.organization?.clientName,siteName:state.organization?.siteName,createdAt:state.organization?.createdAt};}
++async function changeAffaire(key,reload=false){
++  if(switching)throw Error('Un changement de fabrication est en cours.');
++  switching=true;clearTimeout(saveTimer);++saveVersion;
++  const locked=[...document.querySelectorAll('.workspace,.topbar .actions'),$('reference').closest('.projectbar')];locked.forEach(el=>el.inert=true);
+   try{
+-    if(loadFailed)throw Error('Rechargez les gaines avant de changer d’affaire.');
+-    await storage.save(state);
+-    const target=createOfFactoryStorage({workspaceKey:key});
+-    const saved=await target.load(),document=saved||next;
+-    if(!document||document.version!==1||!Array.isArray(document.parts)||!document.meta)throw Error('Cette affaire est illisible.');
+-    if(!saved)await target.save(document);
+-    storage=target;affaireKey=key;state=upgradePurchaseDocument(document);
+-    state.selected=state.parts.some(p=>p.id===state.selected)?state.selected:state.parts[0]?.id;
+-    lastPdf=null;render();$('save-state').textContent='Enregistré dans OF FACTORY';$('storage-error').hidden=true;
+-    await refreshAffaires();
+-  }catch(error){$('affaire').value=affaireKey;toast(error.message);}
+-  finally{locked.forEach(el=>el.inert=false);switching=false;$('affaire').disabled=false;$('new-affaire').disabled=false;}
++    if(loadFailed)throw Error('Rechargez les gaines avant de changer de fabrication.');
++    if(!reload)await storage.save(state);
++    const target=createOfFactoryStorage({workspaceKey:key}),saved=await target.load();
++    if(!saved||saved.version!==1||!Array.isArray(saved.parts)||!saved.meta)throw Error('Fabrication illisible.');
++    storage=target;affaireKey=key;state=upgradePurchaseDocument(saved);state.selected=state.parts[0]?.id;
++    lastPdf=null;render();updateCheckState();$('save-state').textContent='Enregistré dans OF FACTORY';
++  }finally{locked.forEach(el=>el.inert=false);switching=false;}
+ }
+-$('affaire').addEventListener('change',()=>changeAffaire($('affaire').value));
+-$('new-affaire').addEventListener('click',()=>{$('affaire-name').value='';$('affaire-dialog').showModal();$('affaire-name').focus();});
+-$('affaire-dialog').addEventListener('close',()=>{
+-  const name=$('affaire-name').value.trim();
+-  if($('affaire-dialog').returnValue!=='create'||!name)return;
+-  const next=initial();next.parts=[];next.meta={...state.meta,reference:name};if(state.purchase?.settings)next.purchase={rulesVersion:2,settings:structuredClone(state.purchase.settings),transportMode:'auto',transportAmount:null};
+-  changeAffaire('affaire-'+crypto.randomUUID(),next);
+-});
+-try{await refreshAffaires();}catch(error){toast(error.message);$('affaire').disabled=true;$('new-affaire').disabled=true;}
+-render();
++const organization=mountOrganization({host:$('organization'),module:'RectangularDuctWorkspace',getCurrent:()=>({workspaceKey:affaireKey,organization:state.organization}),makeDocument,onOpen:changeAffaire,beforeAssign:async()=>{clearTimeout(saveTimer);++saveVersion;await storage.save(state);},onError:toast});
++function activeWarnings(){return state.coherence?.fingerprint===coherenceFingerprint(state.parts)?state.coherence.warnings.filter(w=>!state.coherence.ignored.includes(w.id)):[];}
++function updateCheckState(){const c=state.coherence;$('coherence-state').textContent=!c?'Vérification facultative non effectuée':c.fingerprint!==coherenceFingerprint(state.parts)?'Dimensions modifiées : relancer la vérification':`Vérifié le ${new Date(c.checkedAt).toLocaleString('fr-FR')} · ${activeWarnings().length} signalement(s)`;}
++function showWarnings(partId){
++  const result=$('coherence-results');result.replaceChildren();const warnings=activeWarnings().filter(w=>!partId||w.partId===partId);
++  if(!warnings.length){const p=document.createElement('p');p.textContent='Aucune incohérence signalée par les règles disponibles.';result.append(p);}
++  for(const w of warnings){const article=document.createElement('article'),title=document.createElement('h3'),reason=document.createElement('p'),detail=document.createElement('p'),ignore=document.createElement('button'),go=document.createElement('button');
++    title.textContent=`Pièce ${w.repere} · ${w.level}`;reason.textContent=w.reason;detail.textContent=`Comparaison : ${w.compared}. Champs à contrôler : ${w.fields.join(', ')}${w.other?' · raccordée à '+w.other:''}`;
++    ignore.type='button';ignore.textContent='Ignorer cet avertissement';ignore.onclick=()=>{state.coherence.ignored.push(w.id);persist();renderList();updateCheckState();showWarnings(partId);};
++    go.type='button';go.textContent='Voir la pièce';go.onclick=()=>{state.selected=w.partId;render();$('coherence-dialog').close();document.getElementById('dim-'+w.fields[0])?.focus();};article.append(title,reason,detail,go,ignore);result.append(article);
++  }
++  if(!$('coherence-dialog').open)$('coherence-dialog').showModal();
++}
++for(const [id,direction] of [['move-left',-1],['move-right',1]])$(id).onclick=()=>{state.parts=movePart(state.parts,state.selected,direction);render();persist();updateCheckState();};
++$('close-coherence').onclick=()=>$('coherence-dialog').close();
++let toolSerial=0;const toolCalls=new Map();
++function toolRequest(action){return new Promise((resolve,reject)=>{if(window.parent===window){reject(Error('Ouvrez ce module depuis OF FACTORY pour utiliser cet outil.'));return;}const id=++toolSerial,timer=setTimeout(()=>{toolCalls.delete(id);reject(Error('Outil indisponible. Réessayez.'));},120000);toolCalls.set(id,{resolve,reject,timer});window.parent.postMessage({type:'of-factory:duct-tool',action,id,document:structuredClone(state)},window.location.origin);});}
++window.addEventListener('message',event=>{if(event.origin!==window.location.origin||event.source!==window.parent||event.data?.type!=='of-factory:duct-tool-result')return;const pending=toolCalls.get(event.data.id);if(!pending)return;clearTimeout(pending.timer);toolCalls.delete(event.data.id);event.data.error?pending.reject(Error(event.data.error)):pending.resolve(event.data.result);});
++$('check-coherence').onclick=async()=>{const button=$('check-coherence');button.disabled=true;const fingerprint=coherenceFingerprint(state.parts);try{const result=await toolRequest('check');if(fingerprint!==coherenceFingerprint(state.parts)){toast('Dimensions modifiées pendant le contrôle : relancez la vérification.');return;}state.coherence={fingerprint,checkedAt:new Date().toISOString(),warnings:result.warnings,ignored:state.coherence?.fingerprint===fingerprint?state.coherence.ignored:[],connectionStatus:result.connectionStatus};persist();renderList();updateCheckState();showWarnings();toast(result.connectionStatus);}catch(e){toast(e.message);}finally{button.disabled=false;}};
++$('export-3d').onclick=async()=>{const button=$('export-3d');button.disabled=true;try{const result=await toolRequest('pdf');await download(new Blob([result.bytes],{type:'application/pdf'}),`vues-3d-${filename(state.meta.reference)}.pdf`);toast('PDF vectoriel · '+sizeLabel(result.bytes.byteLength));}catch(e){toast(e.message);}finally{button.disabled=false;}};
++render();updateCheckState();
+diff --git a/public/gaine-rectangulaire/coherence.mjs b/public/gaine-rectangulaire/coherence.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..44aa490426ebf4be374632bcf057a5243b6726ea
+--- /dev/null
++++ b/public/gaine-rectangulaire/coherence.mjs
+@@ -0,0 +1,32 @@
++// Optional, pure suggestions. No calls to manufacturing formulae, no mutation.
++// Changes to dimensions invalidate both a check and its individual dismissals.
++export const coherenceFingerprint=parts=>JSON.stringify(parts.map(p=>[p.id,p.type,p.dims]).sort((a,b)=>a[0].localeCompare(b[0])));
++export const assemblyCheckFingerprint=doc=>JSON.stringify([coherenceFingerprint(doc.sources),doc.nodes.map(n=>[n.id,n.sourceId,n.part.type,n.part.dims,n.extraPorts]),doc.connections]);
++export function checkCoherence(parts,{connections=[],nodes=[],portsForNode=()=>[],sectionCompatibility=null}={}){
++  const warnings=[];
++  const add=(p,rule,reason,compared,fields,level='suspicion',other=null)=>{
++    warnings.push({id:JSON.stringify([p.id,rule,compared,other]),partId:p.id,repere:p.repere,rule,reason,compared,fields,level,other});
++  };
++  for(const p of parts){const d=p.dims;
++    if(['coude90','coude'].includes(p.type)&&[d.A,d.B,d.C].every(n=>Number.isFinite(n)&&n>0)&&d.A!==d.B)
++      add(p,'elbow','Les dimensions d’entrée et de sortie sont différentes. Vérifiez qu’il s’agit bien d’un coude transformé.',`${d.C} × ${d.A} / ${d.C} × ${d.B} mm`,['A','B','C']);
++  }
++  for(const c of connections){
++    const a=nodes.find(n=>n.id===c.a.node),b=nodes.find(n=>n.id===c.b.node);if(!a||!b)continue;
++    const pa=portsForNode(a).find(p=>p.id===c.a.port),pb=portsForNode(b).find(p=>p.id===c.b.port);if(!pa||!pb)continue;
++    const valid=p=>p.shape==='round'?Number.isFinite(p.d)&&p.d>0:p.shape==='rect'&&[p.w,p.h].every(n=>Number.isFinite(n)&&n>0);
++    if(!valid(pa)||!valid(pb))continue;
++    const dimensions=p=>p.shape==='round'?`Ø ${p.d}`:`${p.w} × ${p.h}`;
++    // Use the assembly engine's existing size tolerance when supplied.
++    const compatible=sectionCompatibility?sectionCompatibility(pa,pb).ok:pa.shape===pb.shape&&(pa.shape==='round'?Math.abs(pa.d-pb.d)<=.5:
++      (Math.abs(pa.w-pb.w)<=.5&&Math.abs(pa.h-pb.h)<=.5)||(Math.abs(pa.w-pb.h)<=.5&&Math.abs(pa.h-pb.w)<=.5));
++    if(!compatible){for(const [n,other] of [[a,b],[b,a]]){const p=parts.find(p=>p.id===(n.sourceId||n.part.id));if(p)add(p,'connection','Dimensions de raccordement à vérifier.',`${dimensions(pa)} / ${dimensions(pb)} mm`,['Raccord '+(n===a?c.a.port:c.b.port)],'incompatibilité',other.part.repere);}}
++  }
++  // Deliberately conservative: at least five comparable straight rectangular
++  // ducts; flag a single extreme section only against a stable central group.
++  const group=parts.filter(p=>p.type==='gaine'&&[p.dims.A,p.dims.B].every(n=>Number.isFinite(n)&&n>0));
++  if(group.length>=5){const areas=group.map(p=>p.dims.A*p.dims.B).sort((a,b)=>a-b),median=areas[Math.floor(areas.length/2)],central=areas.filter(a=>a>=median/1.5&&a<=median*1.5);
++    if(central.length>=group.length*.75)for(const p of group){const a=p.dims.A*p.dims.B;if(a>median*9||a<median/9)add(p,'atypical','Section atypique parmi les gaines droites : simple suggestion de vérification.',`${p.dims.A} × ${p.dims.B} mm ; surface médiane ${median} mm²`,['A','B']);}
++  }
++  return [...new Map(warnings.map(w=>[w.id,w])).values()];
++}
+diff --git a/public/gaine-rectangulaire/engine.mjs b/public/gaine-rectangulaire/engine.mjs
+index c888f1e9dd26f1d4fd49bfaf307ac9d0fe84f1b5..4a7feade725c1af64a16f875762aa2c7a292c845 100644
+--- a/public/gaine-rectangulaire/engine.mjs
++++ b/public/gaine-rectangulaire/engine.mjs
+@@ -219,7 +219,7 @@ function freeFrame(dr,p,box,mode){
+  if(mode==='iso')dr.text(box[0]+box[2]/2,box[1]+box[3]+13,'Cadre libre '+p.cadres[0],8,'center');
+ }
+ const TITLE={cadreLibre:'CADRE LIBRE',bouchon:'BOUCHON RECT.',bouchonGrillage:'BOUCHON GRILLAGÉ',piquage:'PIQUAGE RECT.',gaine:'GAINE',manchette:'MANCHETTE SOUPLE',reduction:'RÉDUCTION',transfo:'TRANSFO.',coude90:'COUDE 90°',coude:'COUDE ANGLE < 90°',deport:'DÉPORT',te:'TÉ 90°'};
+-export function sheet(p,meta={},index=1,total=1){const err=errors(p);if(err.length)throw Error(`${p.repere||'Pièce'} : ${err.join(' ')}`);const dr=new Drawing(),d=values(p);dr.text(42,50,`${meta.company||'F.A.B.'}  ${meta.activity||'Tôlerie - Ventilation'}`,25,'left',false,335);dr.text(395,48,TITLE[p.type],14,'left',false,165);dr.text(395,69,`Référence : ${meta.reference||''}`,10,'left',false,165);dr.rect(26,85,543,352);const left=[48,133,262,207],upper=[327,113,225,119],lower=[327,280,225,119];dr.text(439,105,'Vue de face',9,'center');dr.text(439,270,'Vue de dessus',9,'center');if(p.type==='cadreLibre'){freeFrame(dr,p,left,'iso');freeFrame(dr,p,upper,'front');freeFrame(dr,p,lower,'top');}else if(['bouchon','bouchonGrillage'].includes(p.type)){capIso(dr,p,left);capOrtho(dr,p,upper,false);capOrtho(dr,p,lower,true);}else if(p.type==='piquage'){spigotIso(dr,p,left);spigotOrtho(dr,p,upper,false);spigotOrtho(dr,p,lower,true);}else if(p.type==='manchette'){flexibleIso(dr,p,left);flexibleOrtho(dr,p,upper,false);flexibleOrtho(dr,p,lower,true);}else if(['gaine','deport','reduction','transfo'].includes(p.type)){isoTransition(dr,p,left);orthoTransition(dr,p,upper,false);orthoTransition(dr,p,lower,true);}else{drawProfile(dr,p,left,'iso');drawProfile(dr,p,upper,'front');drawProfile(dr,p,lower,'top');}['CF20 = cadre type METU 20 mm soudé','CL20 = cadre type METU 20 mm libre','CF30 = cadre type METU 30 mm soudé','CL30 = cadre type METU 30 mm libre','BT = cadre en tôle pliée (Lg à préciser)'].forEach((s,i)=>dr.text(86,383+i*9.5,s,7.8));dr.text(PW/2,454,p.type==='manchette'?'Cotes de passage en mm - P : profondeur entre les cadres':'Les cotes sont intérieures tôle et en mm',10,'center');dr.rect(26,475,543,326);dr.rect(26,475,543,27);dr.line([230,475],[230,502]);dr.line([350,475],[350,502]);dr.text(35,493,`Repère : ${p.repere}`,11,'left',true,185);dr.text(241,493,`Qté : ${p.qty}`,10);dr.text(360,493,`${p.matiere} ${fmt(p.epaisseur)} mm`,9,'left',false,196);dr.text(42,526,'DIMENSIONS DE LA PIÈCE',9,'left',true);let keys=FIELDS[p.type].map(f=>f.key);if(p.type==='reduction')keys.push('H','I');if(p.type==='transfo')keys.splice(6,0,'F','G');if(p.type==='te')keys.splice(7,0,'H');if(p.type==='coude90')keys=keys.filter(k=>k!=='R'||d.R>0);const colw=509/keys.length;keys.forEach((k,i)=>{const x=42+i*colw;dr.rect(x,538,colw,21,'#f5f5f5',.4);dr.rect(x,559,colw,26,null,.4);dr.text(x+colw/2,552,k==='Diam'?'Ø':k==='Angle'?'Angle °':k,8.3,'center');dr.text(x+colw/2,576,fmt(d[k]),9,'center',true,colw-4);});const count=cadreCount(p);p.cadres.slice(0,count).forEach((v,i)=>dr.text(42+i*175,612,`Cadre ${i+1} : ${v}`,9,'left',false,166));dr.text(42,633,`Isolation : ${p.isolation?fmt(p.isolation)+' mm':'sans'}`,9);if(p.type==='reduction'){dr.text(42,664,`Chaîne verticale : F + C + H = A     ${fmt(d.F)} + ${fmt(d.C)} + ${fmt(d.H)} = ${fmt(d.A)}`,8.5);dr.text(42,681,`Chaîne horizontale : G + D + I = B     ${fmt(d.G)} + ${fmt(d.D)} + ${fmt(d.I)} = ${fmt(d.B)}`,8.5);dr.text(42,702,'F / G : position signée du bord supérieur / gauche de la sortie.',8.5);}
++export function sheet(p,meta={},index=1,total=1){const err=errors(p);if(err.length)throw Error(`${p.repere||'Pièce'} : ${err.join(' ')}`);const dr=new Drawing(),d=values(p);dr.text(42,50,`${meta.company||'F.A.B.'}  ${meta.activity||'Tôlerie - Ventilation'}`,25,'left',false,335);dr.text(395,48,TITLE[p.type],14,'left',false,165);dr.text(395,69,`Référence : ${meta.reference||''}`,10,'left',false,165);if(meta.clientName||meta.siteName){dr.text(42,79,`Client : ${meta.clientName||'À attribuer'} / Chantier : ${meta.siteName||'À attribuer'}`,8,'left',false,510);dr.text(42,816,`Création fabrication : ${meta.createdAt?new Date(meta.createdAt).toLocaleString('fr-FR'):'inconnue'} / Édition : ${new Date().toLocaleDateString('fr-FR')}`,7,'left',false,510);}dr.rect(26,85,543,352);const left=[48,133,262,207],upper=[327,113,225,119],lower=[327,280,225,119];dr.text(439,105,'Vue de face',9,'center');dr.text(439,270,'Vue de dessus',9,'center');if(p.type==='cadreLibre'){freeFrame(dr,p,left,'iso');freeFrame(dr,p,upper,'front');freeFrame(dr,p,lower,'top');}else if(['bouchon','bouchonGrillage'].includes(p.type)){capIso(dr,p,left);capOrtho(dr,p,upper,false);capOrtho(dr,p,lower,true);}else if(p.type==='piquage'){spigotIso(dr,p,left);spigotOrtho(dr,p,upper,false);spigotOrtho(dr,p,lower,true);}else if(p.type==='manchette'){flexibleIso(dr,p,left);flexibleOrtho(dr,p,upper,false);flexibleOrtho(dr,p,lower,true);}else if(['gaine','deport','reduction','transfo'].includes(p.type)){isoTransition(dr,p,left);orthoTransition(dr,p,upper,false);orthoTransition(dr,p,lower,true);}else{drawProfile(dr,p,left,'iso');drawProfile(dr,p,upper,'front');drawProfile(dr,p,lower,'top');}['CF20 = cadre type METU 20 mm soudé','CL20 = cadre type METU 20 mm libre','CF30 = cadre type METU 30 mm soudé','CL30 = cadre type METU 30 mm libre','BT = cadre en tôle pliée (Lg à préciser)'].forEach((s,i)=>dr.text(86,383+i*9.5,s,7.8));dr.text(PW/2,454,p.type==='manchette'?'Cotes de passage en mm - P : profondeur entre les cadres':'Les cotes sont intérieures tôle et en mm',10,'center');dr.rect(26,475,543,326);dr.rect(26,475,543,27);dr.line([230,475],[230,502]);dr.line([350,475],[350,502]);dr.text(35,493,`Repère : ${p.repere}`,11,'left',true,185);dr.text(241,493,`Qté : ${p.qty}`,10);dr.text(360,493,`${p.matiere} ${fmt(p.epaisseur)} mm`,9,'left',false,196);dr.text(42,526,'DIMENSIONS DE LA PIÈCE',9,'left',true);let keys=FIELDS[p.type].map(f=>f.key);if(p.type==='reduction')keys.push('H','I');if(p.type==='transfo')keys.splice(6,0,'F','G');if(p.type==='te')keys.splice(7,0,'H');if(p.type==='coude90')keys=keys.filter(k=>k!=='R'||d.R>0);const colw=509/keys.length;keys.forEach((k,i)=>{const x=42+i*colw;dr.rect(x,538,colw,21,'#f5f5f5',.4);dr.rect(x,559,colw,26,null,.4);dr.text(x+colw/2,552,k==='Diam'?'Ø':k==='Angle'?'Angle °':k,8.3,'center');dr.text(x+colw/2,576,fmt(d[k]),9,'center',true,colw-4);});const count=cadreCount(p);p.cadres.slice(0,count).forEach((v,i)=>dr.text(42+i*175,612,`Cadre ${i+1} : ${v}`,9,'left',false,166));dr.text(42,633,`Isolation : ${p.isolation?fmt(p.isolation)+' mm':'sans'}`,9);if(p.type==='reduction'){dr.text(42,664,`Chaîne verticale : F + C + H = A     ${fmt(d.F)} + ${fmt(d.C)} + ${fmt(d.H)} = ${fmt(d.A)}`,8.5);dr.text(42,681,`Chaîne horizontale : G + D + I = B     ${fmt(d.G)} + ${fmt(d.D)} + ${fmt(d.I)} = ${fmt(d.B)}`,8.5);dr.text(42,702,'F / G : position signée du bord supérieur / gauche de la sortie.',8.5);}
+  else if(p.type==='transfo'){dr.text(42,664,`Chaîne verticale : C + Ø + F = A     ${fmt(d.C)} + ${fmt(d.Diam)} + ${fmt(d.F)} = ${fmt(d.A)}`,8.5);dr.text(42,681,`Chaîne horizontale : D + Ø + G = B     ${fmt(d.D)} + ${fmt(d.Diam)} + ${fmt(d.G)} = ${fmt(d.B)}`,8.5);dr.text(42,702,'M : longueur de manchette, comprise dans E.',8.5);}
+  else if(p.type.startsWith('coude')){dr.text(42,664,`Angle : ${p.type==='coude90'?90:fmt(d.Angle)}° - Talon entrée D : ${fmt(d.D)} - Talon sortie E : ${fmt(d.E)}`,9);dr.text(42,682,d.R===0?'Intérieur à angle droit - extérieur en courbe.':`Rayon intérieur R : ${fmt(d.R)} mm - extérieur en courbe.`,9);if(d.A!==d.B)dr.text(42,702,'Coude transformé : arrondi extérieur raccordé aux parties droites.',8.5);}
+  else if(p.type==='deport'){dr.text(42,664,`Déport vertical C : ${fmt(d.C)} mm - longueur axiale Lg : ${fmt(d.Lg)} mm`,9);dr.text(42,682,'Section identique aux deux extrémités. C positif vers le bas.',8.5);}
+diff --git a/public/gaine-rectangulaire/index.html b/public/gaine-rectangulaire/index.html
+index a7ce3542766f6f4f8e67989cacb53432a96a14a7..6085212b0c14435567f9ce7689b4812cf7ad2de2 100644
+--- a/public/gaine-rectangulaire/index.html
++++ b/public/gaine-rectangulaire/index.html
+@@ -4,19 +4,19 @@
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Fiches de fabrication de gaines, manchettes souples, bouchons, piquages, réductions, coudes, déports et tés. Vues paramétriques et PDF vectoriels légers.">
+  <title>Gaine rectangulaire | OF FACTORY</title>
+- <link rel="stylesheet" href="style.css">
++ <link rel="stylesheet" href="style.css"><link rel="stylesheet" href="organization.css">
+ </head>
+ <body>
+- <header class="topbar"><div class="identity"><span class="mark" aria-hidden="true">OF</span><div><h1>Gaine rectangulaire</h1><p>Fiches de fabrication · Une fiche par pièce</p></div></div><div class="actions"><button id="open-project">Ouvrir</button><button id="save-project">Sauvegarder</button><button id="export" class="primary">Exporter le PDF</button></div></header>
++ <header class="topbar"><div class="identity"><span class="mark" aria-hidden="true">OF</span><div><h1>Gaine rectangulaire</h1><p>Fiches de fabrication · Une fiche par pièce</p></div></div><div class="actions"><button id="open-project">Ouvrir</button><button id="save-project">Sauvegarder</button><button id="export-3d">PDF vues 3D</button><button id="export" class="primary">Exporter le PDF</button></div></header>
+  <div id="storage-error" class="storage-error" role="alert" hidden><span id="storage-error-text"></span> Conservez votre travail avec Sauvegarder avant de quitter.</div>
+- <div class="projectbar"><label>Affaire <select id="affaire" aria-label="Affaire"></select></label><button id="new-affaire" type="button">+ Nouvelle affaire</button></div><dialog id="affaire-dialog"><form method="dialog"><h2>Nouvelle affaire</h2><label>Nom de l’affaire <input id="affaire-name" maxlength="40" required></label><div class="actions"><button value="cancel" formnovalidate>Annuler</button><button value="create" class="primary">Créer l’affaire</button></div></form></dialog><div class="projectbar"><label>Référence chantier <input id="reference" maxlength="40" placeholder="Nom ou numéro du chantier"></label><label>En-tête <input id="company" maxlength="18" value="F.A.B."></label><label>Activité <input id="activity" maxlength="40" value="Tôlerie - Ventilation"></label><span id="save-state" role="status">Chargement des gaines…</span></div>
++ <div id="organization" class="projectbar organization"></div><div class="projectbar"><label>Référence chantier <input id="reference" maxlength="40" placeholder="Nom ou numéro du chantier"></label><label>En-tête <input id="company" maxlength="18" value="F.A.B."></label><label>Activité <input id="activity" maxlength="40" value="Tôlerie - Ventilation"></label><span id="save-state" role="status">Chargement des gaines…</span></div>
+  <details class="purchase-panel" open><summary>Achat indicatif de l’affaire · HT</summary>
+   <div class="purchase-overview"><div><span id="purchase-subtotal-label">Achat pièces HT</span><strong id="purchase-subtotal">—</strong></div><div><span>Transport HT</span><strong id="purchase-transport">—</strong></div><div><span>Total achat HT</span><strong id="purchase-total">—</strong></div><div class="purchase-actions"><button id="purchase-settings-open" type="button">Réglages du barème</button><button id="purchase-export" type="button">Exporter l’achat CSV</button></div></div>
+   <p id="purchase-status" role="status"></p><div class="purchase-shipping"><label>Transport <select id="purchase-transport-mode"><option value="auto">Estimation automatique</option><option value="manual">Montant fournisseur / manuel</option><option value="collection">Enlèvement atelier · 0 €</option></select></label><label id="purchase-transport-amount-label" hidden>Montant HT (€)<input id="purchase-transport-amount" type="number" min="0" max="1000000000" step="0.01" placeholder="À renseigner"></label></div><p id="purchase-volume"></p><p id="purchase-transport-note"></p><p id="purchase-weight"></p>
+   <details><summary>Détail des prix d’achat</summary><div class="purchase-table-scroll"><table class="purchase-table"><thead><tr><th>Repère</th><th>Qté</th><th>Poids chiffrage unitaire kg</th><th>Prix unitaire HT</th><th>Ligne HT</th></tr></thead><tbody id="purchase-table"></tbody></table></div></details>
+  </details>
+  <main class="workspace">
+-  <aside class="pieces-panel"><div class="section-head"><h2>Pièces <span id="piece-count">1</span></h2><button id="add" class="small" aria-label="Ajouter une pièce">+ Ajouter</button></div><div id="pieces" class="pieces" aria-label="Pièces du chantier"></div><div class="list-foot"><span>Une fiche par repère.</span><span>La quantité figure sur la fiche.</span></div></aside>
++  <aside class="pieces-panel"><div class="section-head"><h2>Pièces <span id="piece-count">1</span></h2><button id="add" class="small" aria-label="Ajouter une pièce">+ Ajouter</button></div><div class="piece-tools"><button id="move-left" type="button" aria-label="Déplacer la pièce vers la gauche">← Gauche</button><button id="move-right" type="button" aria-label="Déplacer la pièce vers la droite">Droite →</button><button id="check-coherence" type="button">Vérifier la cohérence <small>BÊTA</small></button></div><p id="coherence-state" role="status">Vérification facultative non effectuée</p><div id="pieces" class="pieces" aria-label="Pièces du chantier"></div><div class="list-foot"><span>Une fiche par repère.</span><span>La quantité figure sur la fiche.</span></div></aside>
+   <section class="editor" aria-labelledby="editor-title"><div class="section-head"><h2 id="editor-title">Dimensions</h2><div class="editor-actions"><button id="duplicate" class="small">Dupliquer</button><button id="remove-top" class="small delete-button">Supprimer</button></div></div><div id="empty" hidden>Ajoutez une pièce pour commencer.</div><form id="form" novalidate>
+    <div class="row"><label>Repère<input id="repere" maxlength="24" required></label><label class="qty">Quantité<input id="qty" type="number" min="1" max="9999" step="1" required></label></div>
+    <label>Type de pièce<select id="type"></select></label>
+@@ -25,7 +25,7 @@
+   </form></section>
+   <section class="preview-panel" aria-label="Aperçu de la fiche"><div class="preview-head"><div><span class="eyebrow">APERÇU DE LA FICHE</span><h2 id="preview-title">Gaine droite</h2></div><div class="paper-meta"><span>A4 portrait</span><span id="page-number">1 / 1</span></div></div><div id="preview" class="paper"></div><div class="preview-footer"><span>Traits vectoriels · texte sélectionnable</span><span id="weight">PDF léger</span></div></section>
+  </main>
+- <div id="toast" class="toast" role="status" hidden></div>
++ <dialog id="coherence-dialog"><h2>Cohérence dimensionnelle · BÊTA</h2><p>Suggestions facultatives. Aucune cote n’est modifiée. Les voisins du listing ne sont pas supposés raccordés.</p><div id="coherence-results"></div><button id="close-coherence" type="button">Fermer</button></dialog><div id="toast" class="toast" role="status" hidden></div>
+  <dialog id="add-dialog"><div class="section-head"><h2>Ajouter une pièce</h2><button id="close-dialog" aria-label="Fermer">×</button></div><div id="type-choices" class="type-choices"></div></dialog>
+  <dialog id="confirm-dialog"><h2 id="confirm-text"></h2><div class="confirm-actions"><button id="confirm-no">Annuler</button><button id="confirm-yes" class="primary">Confirmer</button></div></dialog>
+  <dialog id="purchase-settings-dialog"><form id="purchase-settings-form"><h2>Barème achat de cette affaire</h2><p>Tarif indicatif à affiner sur cas réel. Les réglages restent enregistrés avec l’affaire.</p><label>Seuils 600 × 600 et 1 200 × 1 200 : hypothèse à confirmer<select id="purchase-setting-thresholdMode"><option value="both">Les deux côtés dépassent le seuil (défaut prudent)</option><option value="max">Le plus grand côté dépasse le seuil</option><option value="area">La surface dépasse le carré du seuil</option></select></label><p>Gaines droites : 1 380 mm = 1,50 m en Firmac ; moins de 1 m = 1 m minimum en cisaillé ; autres longueurs réelles. Pièces : forfaits de la notice, épaisseur saisie sur la fiche (0,8 mm par défaut). Cadres libres galva : 8 € pour un plus grand côté de 1 200 mm inclus maximum, 12 € au-delà, sans minimum de 30 €. Les matières hors barème nécessitent un prix fournisseur. Manchettes au-delà de 1 500 mm : consultation.</p><div id="purchase-settings-fields"></div><p id="purchase-settings-error" role="alert"></p><div class="confirm-actions"><button id="purchase-settings-cancel" type="button">Annuler</button><button class="primary" type="submit">Enregistrer le barème</button></div></form></dialog>
+diff --git a/public/gaine-rectangulaire/organization.css b/public/gaine-rectangulaire/organization.css
+new file mode 100644
+index 0000000000000000000000000000000000000000..7aab8176525536ebcf75b285130406b50bc696cf
+--- /dev/null
++++ b/public/gaine-rectangulaire/organization.css
+@@ -0,0 +1,20 @@
++.organization{display:flex;flex-wrap:wrap;gap:8px;align-items:end;padding:10px;background:#f2f6f8;color:#213746;border-bottom:1px solid #d4dfe5}
++.organization label{display:flex;flex-direction:column;gap:4px;font-size:12px;min-width:130px;max-width:100%}
++.organization select{max-width:min(650px,85vw);padding:7px;border:1px solid #b9cbd5;border-radius:5px;background:white;color:#213746}
++.organization [data-role=fabrication]{width:min(650px,85vw)}
++.organization button,.organization-dialog button{padding:8px 12px;border:1px solid #b9cbd5;border-radius:5px;background:white;color:#213746;cursor:pointer}
++.organization [data-role=status]{flex-basis:100%;font-size:11px;color:#4a6171}
++.organization-dialog{border:1px solid #a8becb;border-radius:10px;padding:22px;width:min(560px,90vw);max-height:90vh;overflow:auto;color:#213746;background:white}
++.organization-dialog::backdrop{background:#102d4966}
++.organization-dialog form{display:grid;gap:12px}
++.organization-dialog label{display:flex;flex-direction:column;gap:4px;font-size:13px}
++.organization-dialog input:not([type=checkbox]),.organization-dialog select{padding:8px;border:1px solid #b9cbd5;border-radius:5px;min-width:0;width:100%;box-sizing:border-box}
++.organization-dialog label:has(input[type=checkbox]){flex-direction:row;align-items:start}
++.organization-dialog [data-error]{color:#9b251b;white-space:pre-wrap}
++.organization-dialog .actions{display:flex;justify-content:end;gap:8px}
++.organization-dialog button.primary{background:#174c69;color:white}
++.piece-tools{display:flex;gap:4px;flex-wrap:wrap;padding:8px}.piece-tools button{font-size:11px;padding:7px}
++#coherence-state{font-size:11px;padding:0 10px;color:#567}
++#coherence-dialog{max-width:700px;max-height:85vh;overflow:auto}
++#coherence-results article{padding:10px 0;border-bottom:1px solid #ddd}
++#coherence-results button{margin:5px}
+diff --git a/public/gaine-rectangulaire/organization.mjs b/public/gaine-rectangulaire/organization.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..fb59d0e05a10dea3fd95d6f788558e316d8c76a8
+--- /dev/null
++++ b/public/gaine-rectangulaire/organization.mjs
+@@ -0,0 +1,57 @@
++export async function organizationRequest(data,fetcher=globalThis.fetch){
++  const response=await fetcher('/api/local/organization',{method:data?'POST':'GET',headers:{'Content-Type':'application/json','X-Plenum-Local':'1'},...(data?{body:JSON.stringify(data)}:{})});
++  const result=await response.json();if(!response.ok)throw Error(result.message||'Organisation indisponible.');return result;
++}
++export const fabricationLabel=f=>`${f.clientName||'Client à attribuer'} / ${f.siteName||'Chantier à attribuer'} / ${f.name} · ${f.createdAt?new Date(f.createdAt).toLocaleString('fr-FR'):'Date inconnue'}`;
++
++// Shared native controls: used by the iframe and the React assembly screen.
++// All text from the database is assigned via textContent/value.
++export function mountOrganization({host,module,getCurrent,makeDocument,onOpen,beforeAssign=async()=>{},onError=()=>{}}){
++  host.innerHTML='<label>Client <select data-role="client" aria-label="Filtrer par client"></select></label><label>Chantier <select data-role="site" aria-label="Filtrer par chantier"></select></label><label>Fabrication <select data-role="fabrication" aria-label="Fabrication"></select></label><button type="button" data-role="new">+ Nouvelle fabrication</button><button type="button" data-role="assign">Attribuer client / chantier</button><span data-role="status" role="status"></span>';
++  const el=role=>host.querySelector(`[data-role="${role}"]`),client=el('client'),site=el('site'),fabrication=el('fabrication');
++  const dialog=document.createElement('dialog');dialog.className='organization-dialog';
++  dialog.innerHTML='<form><h2>Nouvelle fabrication</h2><label>Client existant<select name="clientId" aria-label="Client existant"></select></label><label>Nouveau client<input name="clientName" maxlength="80" aria-label="Nom du client"></label><label><input type="checkbox" name="distinctClient">Créer un client distinct même si un nom identique existe</label><label>Chantier existant<select name="siteId" aria-label="Chantier existant"></select></label><label>Nouveau chantier<input name="siteName" maxlength="80" aria-label="Nom du chantier"></label><label data-ref>Nom de la fabrication<input name="name" maxlength="80" aria-label="Nom de la fabrication" placeholder="Facultatif"></label><p data-error role="alert"></p><div class="actions"><button type="button" data-cancel>Annuler</button><button type="submit" class="primary">Enregistrer</button></div></form>';
++  document.body.append(dialog);const form=dialog.querySelector('form'),field=n=>form.elements.namedItem(n),error=dialog.querySelector('[data-error]');
++  let registry=null,busy=false,requestId=null,assigning=false,disposed=false;
++  const clientLabel=c=>c.name+(registry.clients.filter(v=>v.name.normalize('NFKC').toLocaleLowerCase('fr')===c.name.normalize('NFKC').toLocaleLowerCase('fr')).length>1?' · '+c.id.slice(0,8):'');
++  const option=(select,label,value)=>{const o=document.createElement('option');o.value=value;o.textContent=label;select.append(o);};
++  const selectedFabrication=()=>registry?.fabrications.find(f=>f.id===getCurrent().organization?.fabricationId||f.keys?.[module]===getCurrent().workspaceKey);
++  function paint(){
++    if(!registry||disposed)return;
++    const c=client.value,s=site.value;client.replaceChildren();option(client,'Tous les clients','');option(client,'À attribuer','unassigned');registry.clients.forEach(v=>option(client,clientLabel(v),v.id));client.value=c;
++    site.replaceChildren();option(site,'Tous les chantiers','');registry.sites.filter(v=>!client.value||v.clientId===client.value).forEach(v=>option(site,v.name,v.id));site.value=s;
++    fabrication.replaceChildren();const f=selectedFabrication();
++    const rows=registry.fabrications.filter(v=>(!client.value||(client.value==='unassigned'?!v.clientId:v.clientId===client.value))&&(!site.value||v.siteId===site.value));
++    if(f&&!rows.includes(f))rows.unshift(f);
++    if(!f)option(fabrication,'Brouillon courant','');rows.forEach(v=>option(fabrication,fabricationLabel(v),v.id));fabrication.value=f?.id||'';
++    el('assign').disabled=!f;el('status').textContent=f?`Créée : ${f.createdAt?new Date(f.createdAt).toLocaleString('fr-FR'):'inconnue'} · Modifiée : ${f.updatedAt?new Date(f.updatedAt).toLocaleString('fr-FR'):'inconnue'}`:'';
++  }
++  async function refresh(){registry=await organizationRequest();paint();}
++  const run=async fn=>{if(busy)return;busy=true;for(const e of host.querySelectorAll('button,select'))e.disabled=true;try{await fn();}catch(e){onError(e.message);throw e;}finally{busy=false;for(const e of host.querySelectorAll('button,select'))e.disabled=false;paint();}};
++  function fillSites(){const select=field('siteId');select.replaceChildren();option(select,'Nouveau chantier','');registry.sites.filter(s=>s.clientId===field('clientId').value).forEach(s=>option(select,s.name,s.id));syncFields();}
++  function syncFields(){field('clientName').required=!field('clientId').value;field('clientName').disabled=!!field('clientId').value;field('siteName').required=!field('siteId').value;field('siteName').disabled=!!field('siteId').value;}
++  async function show(assign){try{await refresh();assigning=assign;requestId='affaire-'+crypto.randomUUID();form.reset();error.textContent='';dialog.querySelector('h2').textContent=assign?'Attribuer cette fabrication':'Nouvelle fabrication';dialog.querySelector('[data-ref]').hidden=assign;const select=field('clientId');select.replaceChildren();option(select,'Nouveau client','');registry.clients.forEach(c=>option(select,clientLabel(c),c.id));select.value=selectedFabrication()?.clientId||client.value||'';fillSites();const currentSite=selectedFabrication()?.siteId;if(currentSite)field('siteId').value=currentSite;syncFields();dialog.showModal();(!field('clientId').value?field('clientName'):!field('siteId').value?field('siteName'):field('name')).focus();}catch(e){onError(e.message);}}
++  form.addEventListener('submit',async event=>{
++    event.preventDefault();if(busy||!form.reportValidity())return;error.textContent='';
++    const input=Object.fromEntries(new FormData(form));input.distinctClient=field('distinctClient').checked;
++    form.querySelector('button[type=submit]').disabled=true;
++    try{await run(async()=>{
++      if(assigning){await beforeAssign();await organizationRequest({...input,action:'assign',fabricationId:selectedFabrication().id});}
++      else{const result=await organizationRequest({...input,requestId,module,document:makeDocument(input.name||input.siteName||registry.sites.find(s=>s.id===input.siteId)?.name||'Fabrication')});await onOpen(result.workspaceKey);}
++      await refresh();if(assigning)await onOpen(selectedFabrication().keys[module],true);dialog.close();
++    });}catch(e){error.textContent=e.message;}finally{form.querySelector('button[type=submit]').disabled=false;}
++  });
++  dialog.addEventListener('cancel',e=>{if(busy)e.preventDefault();});dialog.querySelector('[data-cancel]').onclick=()=>{if(!busy)dialog.close();};
++  field('clientId').onchange=fillSites;field('siteId').onchange=syncFields;
++  client.onchange=()=>{site.value='';paint();};site.onchange=paint;
++  fabrication.onchange=()=>run(async()=>{
++    const f=registry.fabrications.find(f=>f.id===fabrication.value);if(!f)return;
++    // Old keys are retained; only a missing counterpart gets the shared UUID key.
++    if(f.keys[module]&&f.bindings[module])await onOpen(f.keys[module]);
++    else{const r=await organizationRequest({requestId:f.id,module,document:makeDocument(f.name)});await onOpen(r.workspaceKey);}
++    await refresh();
++  }).catch(()=>{});
++  el('new').onclick=()=>show(false);el('assign').onclick=()=>show(true);
++  refresh().catch(e=>onError(e.message));
++  return {refresh,openNew:()=>show(false),destroy(){disposed=true;dialog.remove();host.replaceChildren();}};
++}
+diff --git a/public/gaine-rectangulaire/part-order.mjs b/public/gaine-rectangulaire/part-order.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..2fe72757ca671e96054a66a11c066fc512374e3a
+--- /dev/null
++++ b/public/gaine-rectangulaire/part-order.mjs
+@@ -0,0 +1,6 @@
++export function movePart(parts,id,direction){
++  if(![-1,1].includes(direction))return parts;
++  const from=parts.findIndex(p=>p.id===id),to=from+direction;
++  if(from<0||to<0||to>=parts.length)return parts;
++  const next=parts.slice();[next[from],next[to]]=[next[to],next[from]];return next;
++}
+diff --git a/public/gaine-rectangulaire/purchase-ui.mjs b/public/gaine-rectangulaire/purchase-ui.mjs
+index e0ecd94665a8640e0e5797a52412404d71ca8ce6..e92953c70d85dff431207bc63bbaa43b6a20b587 100644
+--- a/public/gaine-rectangulaire/purchase-ui.mjs
++++ b/public/gaine-rectangulaire/purchase-ui.mjs
+@@ -66,7 +66,7 @@ export function mountPurchase({getState,current,onChange,download,toast}){
+   $('purchase-export').addEventListener('click',async()=>{
+     try{
+       const state=getState(),report=estimatePurchase(state),cell=v=>'"'+String(v??'').replace(/^[=+@\-]/,"'$&").replaceAll('"','""')+'"';
+-      const data=[['Affaire',state.meta.reference],['Tarif indicatif HT, à affiner sur cas réel'],['Repère','Quantité','Poids de chiffrage unitaire kg','Prix achat unitaire HT','Prix achat ligne HT','Observation']];
++      const data=[['Client',state.organization?.clientName||'À attribuer'],['Chantier',state.organization?.siteName||'À attribuer'],['Affaire',state.meta.reference],['Tarif indicatif HT, à affiner sur cas réel'],['Repère','Quantité','Poids de chiffrage unitaire kg','Prix achat unitaire HT','Prix achat ligne HT','Observation']];
+       state.parts.forEach((p,i)=>{const r=report.rows[i];data.push([p.repere,p.qty,r.weight??'Non défini',r.unit??'À compléter',r.total??'À compléter',r.available?r.warnings.join(' ; '):r.reason]);});
+       data.push(['Sous-total pièces chiffrées HT',report.subtotal],['Transport HT',report.transport.amount??'À compléter',report.transport.label],['Total achat HT',report.total??'À compléter'],['Encombrement m³',report.transport.volume]);
+       const csv='\uFEFF'+data.map(row=>row.map(cell).join(';')).join('\r\n');
+diff --git a/scripts/audit-test-pdfs.py b/scripts/audit-test-pdfs.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..cf355ec5ad5c485543044ad64905b8c9f92b0391
+--- /dev/null
++++ b/scripts/audit-test-pdfs.py
+@@ -0,0 +1,33 @@
++"""Optional PDF QA: Python + PyMuPDF. Run after server tests and UI tests."""
++import json
++import re
++from pathlib import Path
++import pymupdf
++
++root = Path('test-artifacts')
++result = []
++for path in sorted(root.glob('*.pdf')):
++    doc = pymupdf.open(path)
++    for number, page in enumerate(doc, 1):
++        assert page.get_text().strip(), (path.name, number, 'blank page')
++        assert page.get_drawings(), (path.name, number, 'missing vector views')
++        assert not page.get_images(), (path.name, number, 'unexpected raster image')
++        for block in page.get_text('blocks'):
++            assert block[0] >= 0 and block[1] >= 0 and block[2] <= page.rect.width + 1 and block[3] <= page.rect.height + 1, (path.name, number, 'clipped text', block)
++    result.append({'file': path.name, 'pages': len(doc), 'bytes': path.stat().st_size})
++    if path.name == 'ui-vues-3d.pdf':
++        text = '\n'.join(p.get_text() for p in doc)
++        marks = re.findall(r'\b([A-Z]+\d+) / ', text)
++        assert len(marks) == 2 and marks[0].startswith('C') and marks[1].startswith('G'), marks
++    if path.name == 'ui-fiches-detaillees.pdf':
++        marks = [re.search(r'Repère\s*:\s*(\w+)', p.get_text()).group(1) for p in doc]
++        assert len(marks) == 2 and marks[0].startswith('C') and marks[1].startswith('G'), marks
++    # Render every family example page for a visual review, including the new
++    # elbow outline and the original detailed fabrication header.
++    if path.name in ['vues-3d-familles.pdf', 'fiches-detaillees-familles.pdf']:
++        out = root / 'rendered'
++        out.mkdir(exist_ok=True)
++        for i, page in enumerate(doc):
++            page.get_pixmap(matrix=pymupdf.Matrix(1.3, 1.3), alpha=False).save(out / f'{path.stem}-{i+1}.png')
++print(json.dumps(result, indent=2))
++(root / 'pdf-audit.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
+diff --git a/scripts/test-organization-ui.mjs b/scripts/test-organization-ui.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..7bb6d577c2823b6b375cbcd94932be7259dff798
+--- /dev/null
++++ b/scripts/test-organization-ui.mjs
+@@ -0,0 +1,58 @@
++// npm run build first. Install Playwright separately or set OF_PLAYWRIGHT_MODULE
++// to its ESM entry point; no browser or customer data is bundled with OFactory.
++import assert from 'node:assert/strict';
++import {mkdtemp,mkdir,writeFile} from 'node:fs/promises';
++import {tmpdir} from 'node:os';
++import {join,resolve} from 'node:path';
++import {pathToFileURL} from 'node:url';
++import {startDesktopServer} from '../server/desktop-server.mjs';
++const {chromium}=await import(process.env.OF_PLAYWRIGHT_MODULE?pathToFileURL(process.env.OF_PLAYWRIGHT_MODULE).href:'playwright');
++const dataDir=await mkdtemp(join(tmpdir(),'of-org-ui-'));
++const service=await startDesktopServer({assetsDir:resolve('dist'),dataDir,port:0});
++let browser;const checks=[],pageErrors=[];
++const check=name=>{checks.push(name);console.log('PASS '+name);};
++const registry=async()=>await (await fetch(service.url+'/api/local/organization')).json();
++async function closed(dialog){try{await dialog.waitFor({state:'hidden',timeout:8000});}catch(e){console.error('DIALOG:',await dialog.innerText());console.error('REGISTRY:',JSON.stringify(await registry()));throw e;}}
++try{
++  await fetch(service.url+'/api/local/auth/setup',{method:'POST',headers:{'Content-Type':'application/json','X-Plenum-Local':'1'},body:JSON.stringify({pseudo:'TEST UI',pin:'826419'})});
++  browser=await chromium.launch({headless:true,...(process.env.OF_BROWSER_EXECUTABLE?{executablePath:process.env.OF_BROWSER_EXECUTABLE}:{})});
++  const page=await browser.newPage({viewport:{width:1600,height:1050}});page.on('pageerror',e=>pageErrors.push(e.message));
++  await page.goto(service.url+'/gaine-rectangulaire');
++  const frame=page.frameLocator('iframe[title="Gaine rectangulaire - fiches de fabrication"]'),dialog=frame.locator('.organization-dialog'),newButton=frame.getByRole('button',{name:'+ Nouvelle fabrication',exact:true});
++  await newButton.click();await dialog.getByLabel('Nom du client',{exact:true}).fill('Client Clavier');await dialog.getByLabel('Nom du chantier',{exact:true}).fill('Chantier Entrée');await dialog.getByLabel('Nom du chantier',{exact:true}).press('Enter');await closed(dialog);
++  let r=await registry(),first=r.fabrications.find(f=>f.siteName==='Chantier Entrée');assert.ok(first);const created=first.createdAt;check('Création par Entrée, enregistrement et fermeture après succès');
++  await newButton.click();await dialog.getByLabel('Chantier existant',{exact:true}).selectOption('');await dialog.getByLabel('Nom du chantier',{exact:true}).fill('Annulé');await dialog.getByLabel('Nom du chantier',{exact:true}).press('Escape');await closed(dialog);assert.equal((await registry()).sites.some(s=>s.name==='Annulé'),false);check('Échap annule sans création');
++  await newButton.click();await dialog.getByLabel('Chantier existant',{exact:true}).selectOption('');await dialog.getByLabel('Nom du chantier',{exact:true}).fill('Deuxième chantier');await dialog.getByRole('button',{name:'Enregistrer',exact:true}).click();await closed(dialog);
++  r=await registry();assert.equal(r.clients.length,1);assert.equal(r.sites.length,2);check('Création souris de deux chantiers pour un même client');
++  await newButton.click();await dialog.getByLabel('Nom de la fabrication',{exact:true}).fill('Lot Répété');
++  await dialog.locator('form').evaluate(form=>{form.requestSubmit();form.requestSubmit();form.requestSubmit();});await closed(dialog);
++  r=await registry();assert.equal(r.fabrications.filter(f=>f.name==='Lot Répété').length,1);check('Validations répétées sans doublon et plusieurs fabrications par chantier');
++  await newButton.click();await dialog.getByLabel('Nom de la fabrication',{exact:true}).fill('Échec puis reprise');
++  let blocked=true;
++  await page.route('**/api/local/organization',async route=>{if(blocked&&route.request().method()==='POST'){blocked=false;await route.fulfill({status:500,contentType:'application/json',body:JSON.stringify({message:'Échec simulé'})});}else await route.continue();});
++  await dialog.getByRole('button',{name:'Enregistrer',exact:true}).click();await dialog.locator('[data-error]').filter({hasText:'Échec simulé'}).waitFor();assert.equal(await dialog.isVisible(),true);
++  await dialog.getByLabel('Nom de la fabrication',{exact:true}).press('Enter');await closed(dialog);await page.unroute('**/api/local/organization');assert.equal((await registry()).fabrications.filter(f=>f.name==='Échec puis reprise').length,1);check('Échec de sauvegarde garde le formulaire ouvert, reprise possible');
++  await frame.getByLabel('Fabrication',{exact:true}).selectOption(first.id);
++  await frame.locator('#add').click();await frame.locator('#type-choices button').filter({hasText:'Gaine droite'}).click();
++  await frame.locator('#add').click();await frame.locator('#type-choices button').filter({hasText:'Coude 90°'}).click();
++  const before=await frame.locator('#pieces strong').allTextContents();assert.equal(before.length,2);
++  await frame.getByRole('button',{name:'Déplacer la pièce vers la gauche',exact:true}).click();assert.deepEqual(await frame.locator('#pieces strong').allTextContents(),before.slice().reverse());
++  await frame.getByRole('button',{name:'Déplacer la pièce vers la droite',exact:true}).click();assert.deepEqual(await frame.locator('#pieces strong').allTextContents(),before);
++  await frame.getByRole('button',{name:'Déplacer la pièce vers la gauche',exact:true}).click();
++  await frame.locator('#dim-B').fill('450');
++  await frame.locator('#save-state').filter({hasText:'Enregistré dans OF FACTORY'}).waitFor();
++  await frame.getByRole('button',{name:'Vérifier la cohérence BÊTA'}).click();await frame.locator('#coherence-dialog').waitFor();await frame.getByRole('button',{name:'Ignorer cet avertissement',exact:true}).click();await frame.locator('#close-coherence').click();check('Vérification facultative et avertissement ignoré sans bloquer la fabrication');
++  const downloadPromise=page.waitForEvent('download');await frame.locator('#export-3d').click();const download=await downloadPromise;await mkdir('test-artifacts',{recursive:true});await download.saveAs('test-artifacts/ui-vues-3d.pdf');check('Téléchargement réel du PDF 3D depuis le module intégré');
++  const detailPromise=page.waitForEvent('download');await frame.locator('#export').click();await (await detailPromise).saveAs('test-artifacts/ui-fiches-detaillees.pdf');check('Téléchargement réel des fiches détaillées existantes');
++  await page.reload();await frame.getByLabel('Fabrication',{exact:true}).selectOption(first.id);await frame.locator('#pieces strong').first().waitFor();assert.deepEqual(await frame.locator('#pieces strong').allTextContents(),before.slice().reverse());assert.equal((await registry()).fabrications.find(f=>f.id===first.id).createdAt,created);check('Réouverture : ordre personnalisé et date de création conservés');
++  await page.screenshot({path:'test-artifacts/ui-fabrication.png',fullPage:true});
++  const legacy=(await registry()).fabrications.find(f=>f.unassigned);assert.ok(legacy);
++  await frame.getByLabel('Fabrication',{exact:true}).selectOption(legacy.id);await frame.getByRole('button',{name:'Attribuer client / chantier',exact:true}).click();await dialog.getByLabel('Client existant',{exact:true}).selectOption(first.clientId);await dialog.getByLabel('Chantier existant',{exact:true}).selectOption(first.siteId);await dialog.getByRole('button',{name:'Enregistrer',exact:true}).click();await closed(dialog);assert.equal((await registry()).fabrications.find(f=>f.id===legacy.id).clientId,first.clientId);check('Ancienne affaire ouverte et attribuée manuellement sans recréer son client');
++  await page.goto(service.url+'/assemblage-chantier');await page.getByLabel('Fabrication',{exact:true}).selectOption(first.id);await page.locator('.assembly-source-list strong').first().waitFor();assert.deepEqual(await page.locator('.assembly-source-list strong').allTextContents(),before.slice().reverse());
++  r=await registry();const linked=r.fabrications.find(f=>f.id===first.id);assert.ok(linked.bindings.AssemblyWorkspace);assert.equal(linked.keys.AssemblyWorkspace,linked.keys.RectangularDuctWorkspace);check('Assemblage reprend les mêmes identifiants, le client, le chantier et l’ordre');
++  await page.getByRole('button',{name:'+ Nouvelle fabrication',exact:true}).click();const assemblyDialog=page.locator('.organization-dialog');await assemblyDialog.getByLabel('Nom de la fabrication',{exact:true}).fill('Depuis assemblage');await assemblyDialog.getByLabel('Nom de la fabrication',{exact:true}).press('Enter');await assemblyDialog.waitFor({state:'hidden'});assert.ok((await registry()).fabrications.find(f=>f.name==='Depuis assemblage'));check('Création par Entrée également dans Assemblage Chantier');
++  await page.getByRole('button',{name:'Vérifier la cohérence · BÊTA',exact:true}).click();await page.getByRole('heading',{name:'Cohérence dimensionnelle · BÊTA',exact:true}).waitFor();await page.keyboard.press('Escape');await page.locator('.assembly-modal').waitFor({state:'hidden'});check('Contrôle BÊTA également accessible dans Assemblage Chantier');
++  await page.screenshot({path:'test-artifacts/ui-assemblage.png',fullPage:true});
++  assert.deepEqual(pageErrors,[]);check('Aucune erreur JavaScript pendant les scénarios');
++  await writeFile('test-artifacts/ui-results.json',JSON.stringify({checks,pageErrors},null,2));
++}finally{await browser?.close();await new Promise(r=>service.server.close(r));}
+diff --git a/server/local-api.mjs b/server/local-api.mjs
+index 2b979da334011929fb5ed9ceebc97fec16e9d89b..47b58044b7bc218e4a22384dbfa59074ec883dce 100644
+--- a/server/local-api.mjs
++++ b/server/local-api.mjs
+@@ -11,6 +11,7 @@ import {validateLabelDocument,makeStandaloneLabelPlan,standaloneSourceFingerprin
+ import {createFreeRasterCache,makeMixedLabelZpl} from './free-label-print.mjs';
+ import {createMatrixEngine} from './matrix-engine.mjs';
+ import {MATRIX_CATALOG,validateMatrixOrder} from './matrix-orders.mjs';
++import {migrateOrganization,organizationView,createFabrication,assignFabrication,organizationMeta,bindWorkspace,workspaceTypes} from './work-organization.mjs';
+ 
+ const names = ['AccessCode', 'Chantier', 'ClientAccess', 'ClientView', 'MachineBride', 'MachineDoc', 'Plenum', 'Tremie', 'User'];
+ const grilleNames = ['Chantier', 'Plenum', 'Tremie', 'ClientView'];
+@@ -65,6 +66,11 @@ export function localApi(dataDir, { allowLan = false, pinlessLocal=false, labelP
+   async function mutate(fn) {
+     const operation = queue.then(async () => {
+       const db = await read();
++      if(!db.OrganizationVersion){
++        try{await writeFile(join(dataDir,'database.before-organization-v1.json'),await readFile(dbFile),{flag:'wx'});}
++        catch(error){if(error.code!=='EEXIST')throw error;}
++      }
++      migrateOrganization(db);
+     const result = await fn(db);
+       await writeFile(dbFile + '.tmp', JSON.stringify(db, null, 2), 'utf8');
+       await rename(dbFile + '.tmp', dbFile);
+@@ -124,6 +130,29 @@ export function localApi(dataDir, { allowLan = false, pinlessLocal=false, labelP
+       if (await auth(req, res, parts, body, send)) return;
+       if (!req.user) throw fail(401, 'Connectez-vous avec votre PIN.');
+       if ((parts[0] === 'backup' || parts[1] === 'AccessCode') && !req.user.is_admin) throw fail(403, 'Accès administrateur requis.');
++      if(parts[0]==='organization'&&parts.length===1){
++        if(req.method==='GET')return send(200,await mutate(db=>organizationView(db)));
++        if(req.method!=='POST')throw fail(405,'Méthode non autorisée.');
++        if(req.headers['x-plenum-local']!=='1')throw fail(403,'Requête locale requise.');
++        const input=JSON.parse((await body(req)).toString('utf8'));
++        return send(200,await mutate(db=>{
++          if(input.action==='assign'){assignFabrication(db,input);return organizationView(db);}
++          if(!workspaceTypes.includes(input.module))throw fail(400,'Module inconnu.');
++          const f=createFabrication(db,input);
++          if(!f.bindings[input.module]){
++            f.keys[input.module]||= 'affaire-'+randomUUID();
++            const document=structuredClone(input.document);if(!document?.meta)throw fail(400,'Document manquant.');
++            if(input.module==='AssemblyWorkspace'){
++              const source=db.RectangularDuctWorkspace.find(row=>row.id===f.bindings.RectangularDuctWorkspace);
++              if(source){document.sources=structuredClone(source.document.parts);document.meta={...source.document.meta};}
++            }
++            document.organization=organizationMeta(db,f);
++            const row=record(input.module,{workspaceKey:f.keys[input.module],name:f.name,document});
++            bindWorkspace(db,input.module,row);db[input.module].push(row);
++          }
++          return {...organizationMeta(db,f),workspaceKey:f.keys[input.module]};
++        }));
++      }
+       if(parts[0]==='matrices'){
+         if(parts.length===2&&parts[1]==='catalog'&&req.method==='GET')return send(200,{templates:MATRIX_CATALOG});
+         if(parts.length===2&&parts[1]==='generate'&&req.method==='POST'){
+@@ -279,15 +308,19 @@ export function localApi(dataDir, { allowLan = false, pinlessLocal=false, labelP
+       }
+       const result = await mutate(db => {
+         if (req.method === 'POST' && !id) {
+-          const item = record(name, input); db[name].push(item); return item;
++          if(workspaceTypes.includes(name)){
++            const index=db[name].findIndex(row=>row.workspaceKey===input.workspaceKey);
++            if(index>=0){const item=record(name,input,db[name][index]);bindWorkspace(db,name,item);db[name][index]=item;return item;}
++          }
++          const item = record(name, input); bindWorkspace(db,name,item); db[name].push(item); return item;
+         }
+         if (req.method === 'POST' && id === 'bulk') {
+           if (!Array.isArray(input)) throw fail(400, 'Liste attendue.');
+-          const items = input.map(item => record(name, item)); db[name].push(...items); return items;
++          const items = input.map(item => record(name, item)); for(const item of items)bindWorkspace(db,name,item); db[name].push(...items); return items;
+         }
+         const index = db[name].findIndex(item => item.id === id);
+         if (index < 0) throw fail(404, 'Enregistrement introuvable.');
+-        if (req.method === 'PUT') return (db[name][index] = record(name, input, db[name][index]));
++        if (req.method === 'PUT') {const item=record(name,input,db[name][index]);bindWorkspace(db,name,item);return (db[name][index]=item);}
+         if (req.method === 'DELETE') {
+           if (name === 'CutBasket') delete db.LabelReferences[id];
+           return db[name].splice(index, 1)[0];
+diff --git a/server/work-organization.mjs b/server/work-organization.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..4da6f6201c368c06306becce88bc3312bab043c9
+--- /dev/null
++++ b/server/work-organization.mjs
+@@ -0,0 +1,70 @@
++import {randomUUID} from 'node:crypto';
++
++export const workspaceTypes=['RectangularDuctWorkspace','AssemblyWorkspace'];
++const reject=message=>{throw Object.assign(Error(message),{status:400});};
++export const normalizeName=name=>String(name??'').normalize('NFKC').trim().replace(/\s+/g,' ').toLocaleLowerCase('fr');
++const name=value=>{if(typeof value!=='string'||!value.trim()||value.trim().length>80)reject('Nom requis (80 caractères maximum).');return value.trim().replace(/\s+/g,' ');};
++
++// No inference from an old reference, even when both modules used "main".
++// Binding to immutable record IDs keeps legacy workspaces independent.
++export function migrateOrganization(db){
++  db.OfClients??=[];db.OfSites??=[];db.OfFabrications??=[];
++  for(const type of workspaceTypes)for(const row of db[type]||[]){
++    if(db.OfFabrications.some(f=>f.bindings?.[type]===row.id))continue;
++    const linked=db.OfFabrications.find(f=>f.id===row.document?.organization?.fabricationId);
++    if(linked){linked.bindings[type]=row.id;continue;}
++    db.OfFabrications.push({id:`legacy-${type}-${row.id}`,name:row.name||'Affaire sans nom',clientId:null,siteId:null,
++      createdAt:row.created_date||null,updatedAt:row.updated_date||row.created_date||null,bindings:{[type]:row.id},
++      keys:{[type]:row.workspaceKey},unassigned:true});
++  }
++  db.OrganizationVersion=1;
++  return db;
++}
++export function organizationView(db){
++  migrateOrganization(db);
++  return {version:1,clients:db.OfClients,sites:db.OfSites,fabrications:db.OfFabrications.map(f=>({...f,
++    clientName:db.OfClients.find(c=>c.id===f.clientId)?.name||'',siteName:db.OfSites.find(s=>s.id===f.siteId)?.name||''}))};
++}
++export function organizationMeta(db,f){return {fabricationId:f.id,clientId:f.clientId,siteId:f.siteId,
++  clientName:db.OfClients.find(c=>c.id===f.clientId)?.name||'',siteName:db.OfSites.find(s=>s.id===f.siteId)?.name||'',createdAt:f.createdAt};}
++export function createFabrication(db,input,now=new Date().toISOString()){
++  migrateOrganization(db);
++  const existing=db.OfFabrications.find(f=>f.id===input.requestId);if(existing)return existing;
++  if(typeof input.requestId!=='string'||!/^affaire-[a-zA-Z0-9-]{1,80}$/.test(input.requestId))reject('Identifiant de validation invalide.');
++  let client=db.OfClients.find(c=>c.id===input.clientId);
++  if(!client){
++    if(input.clientId)reject('Client introuvable.');
++    const clientName=name(input.clientName),matches=db.OfClients.filter(c=>normalizeName(c.name)===normalizeName(clientName));
++    if(matches.length>1&&!input.distinctClient)reject('Plusieurs clients portent ce nom : sélectionnez le client existant ou cochez « client distinct ».');
++    if(matches.length&&!input.distinctClient)client=matches[0];
++    else{client={id:randomUUID(),name:clientName,createdAt:now};db.OfClients.push(client);}
++  }
++  let site=db.OfSites.find(s=>s.id===input.siteId&&s.clientId===client.id);
++  if(!site){
++    if(input.siteId)reject('Ce chantier ne dépend pas du client sélectionné.');
++    const siteName=name(input.siteName);site=db.OfSites.find(s=>s.clientId===client.id&&normalizeName(s.name)===normalizeName(siteName));
++    if(!site){site={id:randomUUID(),name:siteName,clientId:client.id,createdAt:now};db.OfSites.push(site);}
++  }
++  const f={id:input.requestId,name:name(input.name||site.name),clientId:client.id,siteId:site.id,createdAt:now,updatedAt:now,
++    bindings:{},keys:Object.fromEntries(workspaceTypes.map(t=>[t,input.requestId])),unassigned:false};
++  db.OfFabrications.push(f);return f;
++}
++export function assignFabrication(db,input){
++  const target=db.OfFabrications.find(f=>f.id===input.fabricationId);if(!target)reject('Fabrication introuvable.');
++  const helper=createFabrication(db,{...input,requestId:`affaire-${randomUUID()}`});
++  target.clientId=helper.clientId;target.siteId=helper.siteId;target.unassigned=false;
++  db.OfFabrications=db.OfFabrications.filter(f=>f!==helper);
++  // Update only identity metadata; preserve every dimension and connection.
++  for(const type of workspaceTypes){const row=db[type]?.find(r=>r.id===target.bindings[type]);if(row)row.document.organization=organizationMeta(db,target);}
++  return target;
++}
++export function bindWorkspace(db,type,row){
++  if(!workspaceTypes.includes(type))return;
++  let f=db.OfFabrications.find(f=>f.id===row.document?.organization?.fabricationId);
++  if(!f)f=db.OfFabrications.find(f=>f.bindings?.[type]===row.id);
++  if(!f)return;
++  if(f.keys[type]&&f.keys[type]!==row.workspaceKey)reject('Rattachement de fabrication incohérent.');
++  if(f.bindings[type]&&f.bindings[type]!==row.id)reject('Cette fabrication possède déjà un document dans ce module.');
++  f.bindings[type]=row.id;f.keys[type]=row.workspaceKey;f.updatedAt=row.updated_date;f.name=row.name;
++  if(row.document.organization||f.clientId)row.document.organization=organizationMeta(db,f);
++}
+diff --git a/server/work-organization.test.mjs b/server/work-organization.test.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..8d95188a9b82b20a79c41e4fada2d379347a0921
+--- /dev/null
++++ b/server/work-organization.test.mjs
+@@ -0,0 +1,92 @@
++import {test} from 'node:test';
++import assert from 'node:assert/strict';
++import {mkdtemp,mkdir,writeFile,readFile} from 'node:fs/promises';
++import {tmpdir} from 'node:os';
++import {join} from 'node:path';
++import {startDesktopServer} from './desktop-server.mjs';
++import {migrateOrganization,organizationView,createFabrication,assignFabrication} from './work-organization.mjs';
++import {newPart,makePdf,TYPES,sheet} from '../public/gaine-rectangulaire/engine.mjs';
++import {movePart} from '../public/gaine-rectangulaire/part-order.mjs';
++import {checkCoherence,coherenceFingerprint} from '../public/gaine-rectangulaire/coherence.mjs';
++import {emptyAssembly,newNode,portsOf,importSources} from '../src/lib/assembly/model.mjs';
++import {makePartPdf} from '../src/lib/assembly/part-pdf.mjs';
++import {jsPDF} from 'jspdf';
++
++const doc=()=>({version:1,meta:{company:'F.A.B.',activity:'Ventilation',reference:'TEST'},parts:[newPart('gaine'),newPart('coude90')]});
++test('Legacy migration is idempotent, lossless, keeps unknown dates and never joins the two main workspaces',()=>{
++  const db={RectangularDuctWorkspace:[{id:'r',workspaceKey:'main',name:'Ancienne',document:doc(),created_date:'2020-01-01T00:00:00Z'}],AssemblyWorkspace:[{id:'a',workspaceKey:'main',name:'Ancienne',document:emptyAssembly()}]};
++  const before=structuredClone(db);migrateOrganization(db);assert.equal(db.OfFabrications.length,2);assert.equal(db.OfFabrications[1].createdAt,null);
++  assert.deepEqual(db.RectangularDuctWorkspace,before.RectangularDuctWorkspace);assert.deepEqual(db.AssemblyWorkspace,before.AssemblyWorkspace);assert.equal(db.OfClients.length,0);
++  const migrated=structuredClone(db);migrateOrganization(db);assert.deepEqual(db,migrated);
++  assignFabrication(db,{fabricationId:db.OfFabrications[0].id,clientName:'Client manuel',siteName:'Chantier manuel'});
++  assert.equal(db.RectangularDuctWorkspace[0].document.organization.clientName,'Client manuel');assert.deepEqual(db.RectangularDuctWorkspace[0].document.parts,before.RectangularDuctWorkspace[0].document.parts);
++  assert.equal(db.OfFabrications[0].createdAt,'2020-01-01T00:00:00Z');
++});
++test('Names reuse exact normalized clients and sites, with an explicit way to distinguish identical legal names',()=>{
++  const db={};migrateOrganization(db);
++  const a=createFabrication(db,{requestId:'affaire-a',clientName:'  ACME  SAS ',siteName:' Paris '},'2025-01-01');
++  const b=createFabrication(db,{requestId:'affaire-b',clientName:'acme sas',siteName:'Paris'},'2025-02-01');
++  assert.equal(a.clientId,b.clientId);assert.equal(a.siteId,b.siteId);
++  const c=createFabrication(db,{requestId:'affaire-c',clientId:a.clientId,siteName:'Lyon'});assert.notEqual(c.siteId,a.siteId);
++  const d=createFabrication(db,{requestId:'affaire-d',clientName:'ACME SAS',distinctClient:true,siteName:'Paris'});assert.notEqual(d.clientId,a.clientId);
++  assert.equal(db.OfClients.length,2);assert.equal(db.OfSites.length,3);assert.equal(organizationView(db).fabrications[0].createdAt,'2025-01-01');
++});
++test('Atomic create is idempotent under repeated validations; modules share identity and migration survives restart',async()=>{
++  const root=await mkdtemp(join(tmpdir(),'of-org-')),assetsDir=join(root,'assets'),dataDir=join(root,'data');await mkdir(assetsDir);await writeFile(join(assetsDir,'index.html'),'OF');
++  let service=await startDesktopServer({assetsDir,dataDir,port:0});
++  const call=async(path,input,method=input?'POST':'GET')=>{
++    const response=await fetch(service.url+'/api/local/'+path,{method,headers:{'Content-Type':'application/json','X-Plenum-Local':'1'},...(input?{body:JSON.stringify(input)}:{})});
++    const data=await response.json();return {status:response.status,data};
++  };
++  try{
++    await call('auth/setup',{pseudo:'TEST',pin:'826419'});
++    const input={requestId:'affaire-repeated',module:'RectangularDuctWorkspace',clientName:'Client Test',siteName:'Site Test',name:'Lot 1',document:doc()};
++    const results=await Promise.all(Array.from({length:8},()=>call('organization',input)));assert.ok(results.every(r=>r.status===200));
++    const first=results[0].data;assert.ok(results.every(r=>r.data.fabricationId===first.fabricationId));
++    const rows=(await call('entities/RectangularDuctWorkspace')).data;assert.equal(rows.length,1);
++    const registry=(await call('organization')).data;assert.equal(registry.fabrications.length,1);assert.equal(registry.clients.length,1);
++    const failed=await call('organization',{...input,requestId:'affaire-bad',clientName:'Should Roll Back',siteName:'',document:doc()});assert.equal(failed.status,400);
++    assert.equal((await call('organization')).data.clients.length,1);
++    const assembly=await call('organization',{requestId:first.fabricationId,module:'AssemblyWorkspace',document:emptyAssembly()});assert.equal(assembly.status,200);
++    const ar=(await call('entities/AssemblyWorkspace')).data;assert.equal(ar[0].document.organization.fabricationId,first.fabricationId);assert.deepEqual(ar[0].document.sources,input.document.parts);
++    const original=rows[0].document,ordered=movePart(original.parts,original.parts[1].id,-1);original.parts=ordered;
++    await call('entities/RectangularDuctWorkspace/'+rows[0].id,{...rows[0],document:original},'PUT');
++    const f=(await call('organization')).data.fabrications[0];assert.equal(f.createdAt,first.createdAt);assert.ok(f.updatedAt>=f.createdAt);
++    const backup=JSON.parse(await readFile(join(dataDir,'database.before-organization-v1.json'),'utf8'));assert.ok(!backup.OrganizationVersion);
++    await service.flush();await new Promise(r=>service.server.close(r));service=await startDesktopServer({assetsDir,dataDir,port:0});
++    assert.deepEqual((await call('entities/RectangularDuctWorkspace')).data[0].document.parts,ordered);
++    assert.equal((await call('organization')).data.fabrications.length,1);
++  }finally{await new Promise(r=>service.server.close(r));}
++});
++test('Manual order changes only array order, including extremes and JSON reopen; detailed sheet numbering follows it',()=>{
++  const parts=doc().parts,before=structuredClone(parts),next=movePart(parts,parts[1].id,-1);
++  assert.equal(next[0],parts[1]);assert.deepEqual(parts,before);assert.equal(movePart(next,next[0].id,-1),next);
++  assert.deepEqual(movePart(next,next[0].id,1),parts);assert.deepEqual(JSON.parse(JSON.stringify(next)).map(p=>p.id),next.map(p=>p.id));
++  assert.ok(sheet(next[0],{},1,2).some(c=>c.kind==='text'&&c.s.includes(next[0].repere)));
++  const ws={version:1,meta:doc().meta,parts:next,organization:{fabricationId:'affaire-test',clientId:'c',siteId:'s'}};
++  const assembly=importSources(emptyAssembly(),ws);assert.deepEqual(assembly.sources.map(p=>p.id),next.map(p=>p.id));assert.deepEqual(assembly.organization,ws.organization);
++});
++test('Beta distinguishes transformed elbows, connected mismatches and suspicions without guessing listing connections or modifying input',()=>{
++  const equal=newPart('coude90');equal.dims.B=equal.dims.A;assert.equal(checkCoherence([equal]).length,0);
++  const transformed=structuredClone(equal);transformed.dims.B+=100;const before=structuredClone(transformed);assert.equal(checkCoherence([transformed])[0].level,'suspicion');assert.deepEqual(transformed,before);
++  const a=newPart('gaine'),b=newPart('gaine');b.dims.A+=250;
++  assert.equal(checkCoherence([a,b]).length,0);
++  const na=newNode(a,{sourceId:a.id}),nb=newNode(b,{sourceId:b.id}),connection={a:{node:na.id,port:'out'},b:{node:nb.id,port:'in'}};
++  assert.equal(checkCoherence([a,b],{nodes:[na,nb],connections:[connection],portsForNode:portsOf}).filter(w=>w.level==='incompatibilité').length,2);
++  nb.part=structuredClone(a);nb.part.id=b.id;assert.equal(checkCoherence([a,b],{nodes:[na,nb],connections:[connection],portsForNode:portsOf}).length,0);
++  assert.equal(checkCoherence([a,b],{nodes:[na,nb],connections:[{a:{node:na.id,port:'unknown'},b:{node:nb.id,port:'in'}}],portsForNode:portsOf}).length,0);
++  const fingerprint=coherenceFingerprint([a,b]);b.dims.A++;assert.notEqual(coherenceFingerprint([a,b]),fingerprint);
++  const comparable=Array.from({length:5},()=>newPart('gaine'));comparable[4].dims.A*=10;comparable[4].dims.B*=10;assert.equal(checkCoherence(comparable).filter(w=>w.rule==='atypical').length,1);
++});
++test('All family views are vector, ordered and bounded; usual and 100-part PDFs stay well below email limits',async()=>{
++  const parts=Object.keys(TYPES).map((type,i)=>newPart(type,i+1)),meta={...doc().meta,clientName:'Client Test',siteName:'Site Test',createdAt:'2025-01-01T10:00:00Z'};
++  const before=structuredClone(parts),pdf=makePartPdf(parts,meta),bytes=Buffer.from(pdf.output('arraybuffer'));
++  assert.ok(pdf.getNumberOfPages()<parts.length);assert.ok(!bytes.toString('latin1').includes('/Subtype /Image'));assert.ok(bytes.length<500000);
++  assert.deepEqual(parts,before);assert.deepEqual([...new Set(pdf.partLayout.map(v=>v.repere))],parts.map(p=>p.repere));
++  for(const v of pdf.partLayout){const [x,y,w,h]=v.box,[x0,y0,x1,y1]=v.bounds;assert.ok(x0>=x&&x1<=x+w&&y0>=y&&y1<=y+h,JSON.stringify(v));}
++  const long=Array.from({length:100},(_,i)=>newPart(i%2?'coude90':'transfo',i+1)),large=makePartPdf(long,meta),detailed=makePdf(parts,meta,jsPDF);
++  assert.equal(large.getNumberOfPages(),50);assert.ok(large.output('arraybuffer').byteLength<3e6);assert.equal(detailed.getNumberOfPages(),parts.length);
++  await mkdir('test-artifacts',{recursive:true});
++  for(const [name,p] of [['vues-3d-familles',pdf],['vues-3d-100-pieces',large],['fiches-detaillees-familles',detailed]])await writeFile(`test-artifacts/${name}.pdf`,Buffer.from(p.output('arraybuffer')));
++  await writeFile('test-artifacts/pdf-metrics.json',JSON.stringify({families:{pieces:parts.length,pages:pdf.getNumberOfPages(),bytes:bytes.length},hundred:{pages:large.getNumberOfPages(),bytes:large.output('arraybuffer').byteLength},detailed:{pages:detailed.getNumberOfPages(),bytes:detailed.output('arraybuffer').byteLength}},null,2));
++});
+diff --git a/src/lib/assembly/model.mjs b/src/lib/assembly/model.mjs
+index f58c39070e624a0fe25458cd6313bbfde1db1b43..c9264666b5c4fc79496cda02ffc333130cc0be21 100644
+--- a/src/lib/assembly/model.mjs
++++ b/src/lib/assembly/model.mjs
+@@ -28,6 +28,7 @@ export function sourceWorkspace(input){
+ }
+ export function importSources(doc,workspace){
+   sourceWorkspace(workspace);const next=clone(doc);next.sources=clone(workspace.parts);next.meta={company:workspace.meta.company||doc.meta.company,activity:workspace.meta.activity||doc.meta.activity,reference:workspace.meta.reference||doc.meta.reference};
++  if(workspace.organization)next.organization=clone(workspace.organization);
+   for(const n of next.nodes){if(!n.sourceId)continue;const source=next.sources.find(p=>p.id===n.sourceId)||next.sources.find(p=>p.repere===n.part.repere&&p.type===n.part.type);if(source){n.part=clone(source);n.sourceId=source.id;n.total=source.qty;}}
+   return next;
+ }
+diff --git a/src/lib/assembly/part-pdf.mjs b/src/lib/assembly/part-pdf.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..798fd7446f18bce0db4473377fd6951fe73c508c
+--- /dev/null
++++ b/src/lib/assembly/part-pdf.mjs
+@@ -0,0 +1,67 @@
++import {jsPDF} from 'jspdf';
++import {partModel,projection} from './geometry.mjs';
++import {TYPES,FIELDS,errors} from '../../../public/gaine-rectangulaire/engine.mjs';
++
++const clean=value=>String(value??'').replace(/×/g,' x ').replace(/→/g,' > ').replace(/−/g,'-').replace(/[\u2000-\u200f\u202f]/g,' ');
++const simple=new Set(['gaine','cadreLibre','bouchon','bouchonGrillage','piquage','manchette']);
++const titles={iso:'Isométrique',front:'Face',top:'Dessus',side:'Côté'};
++function outlineLines(part,model){
++  if(!['coude','coude90'].includes(part.type))return model.lines;
++  const ring=model.lines[0],count=ring.length-1;
++  // The solid already contains the curved profile. Its tessellation seams are
++  // not physical folds: retain the profile and sharp edges, omit smooth seams.
++  return model.lines.filter((line,index)=>{
++    if(index<2)return true;
++    const i=ring.findIndex(p=>p===line[0]);if(i<0)return true;
++    const prev=ring[(i+count-1)%count],p=ring[i],next=ring[(i+1)%count];
++    const a=p.map((v,j)=>v-prev[j]),b=next.map((v,j)=>v-p[j]),den=Math.hypot(...a)*Math.hypot(...b);
++    return !den||a.reduce((sum,v,j)=>sum+v*b[j],0)/den<Math.cos(Math.PI/12);
++  });
++}
++
++// Geometry is shared with the assembly engine. Only projection and layout live
++// here: no alternate solids, camera screenshots, images or interactive 3D.
++export function makePartPdf(parts,meta={},PDF=jsPDF){
++  if(!parts.length)throw Error('Ajoutez une pièce avant d’exporter.');
++  for(const p of parts){const es=errors(p);if(es.length)throw Error(`${p.repere} : ${es[0]}`);}
++  const pdf=new PDF({orientation:'landscape',unit:'mm',format:'a4',compress:true,putOnlyUsedFonts:true,floatPrecision:3});
++  pdf.setProperties({title:clean(`Vues 3D - ${meta.reference||'Fabrication'}`),subject:'Vues statiques vectorielles par pièce',author:'OF FACTORY'});
++  const text=(s,x,y,size=8,bold=false,width)=>{pdf.setFont('helvetica',bold?'bold':'normal');pdf.setFontSize(size);pdf.setTextColor(30,47,61);pdf.text(width?pdf.splitTextToSize(clean(s),width):clean(s),x,y);};
++  const date=new Date().toLocaleString('fr-FR');
++  let index=0,page=0;
++  const layout=[];
++  while(index<parts.length){
++    if(page++)pdf.addPage();
++    text('OF FACTORY / VISUALISATION DES PIÈCES',10,10,11,true);
++    text(`Client : ${meta.clientName||'À attribuer'}`,10,16,8,false,275);
++    text(`Chantier : ${meta.siteName||'À attribuer'} / Fabrication : ${meta.reference||'Sans référence'}`,10,22,8,false,275);
++    text(`Création fabrication : ${meta.createdAt?new Date(meta.createdAt).toLocaleString('fr-FR'):'inconnue'} / Édition : ${date}`,10,32,7);
++    const batch=parts.slice(index,index+3),count=batch.length===3&&batch.every(p=>simple.has(p.type))?3:Math.min(2,parts.length-index),rowHeight=160/count;
++    for(let row=0;row<count;row++){
++      const p=parts[index++],model=partModel(p),lines=outlineLines(p,model),y=37+row*rowHeight,modes=simple.has(p.type)?['iso','front','side']:['iso','front','top','side'];
++      pdf.setDrawColor(188,202,211);pdf.setLineWidth(.15);pdf.line(10,y,287,y);
++      text(`${p.repere} / ${TYPES[p.type]} / Quantité ${p.qty}`,11,y+5,9,true);
++      const dims=FIELDS[p.type].map(f=>`${f.key} ${p.dims[f.key]}`).join(' / ');
++      text(`Dimensions (mm) : ${dims}`,11,y+10,7,false,274);
++      const cellW=276/modes.length,viewY=y+17,viewH=rowHeight-19;
++      modes.forEach((mode,col)=>{
++        const x=11+col*cellW,project=projection(mode),points=model.lines.flat().map(project);
++        if(!points.length)throw Error(`Géométrie indisponible : ${p.repere}`);
++        const xs=points.map(p=>p[0]),ys=points.map(p=>p[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
++        const scale=Math.min((cellW-10)/Math.max(1,x1-x0),(viewH-10)/Math.max(1,y1-y0));
++        const map=p=>{const a=project(p);return [x+cellW/2+(a[0]-(x0+x1)/2)*scale,viewY+5+(viewH-5)/2+(a[1]-(y0+y1)/2)*scale];};
++        text(titles[mode],x+3,viewY+2,7);
++        pdf.setFillColor(235,241,244);pdf.setDrawColor(130,151,165);pdf.setLineWidth(.1);
++        const faces=model.triangles.map(t=>({t,depth:t.reduce((sum,p)=>sum+project(p)[2]/3,0)})).sort((a,b)=>a.depth-b.depth);
++        for(const {t} of faces){const a=t.map(map);pdf.triangle(...a[0],...a[1],...a[2],'F');}
++        pdf.setDrawColor(45,74,93);pdf.setLineWidth(.18);
++        for(const line of lines){const a=line.map(map);for(let i=1;i<a.length;i++)pdf.line(...a[i-1],...a[i]);}
++        const mapped=points.map(p=>[x+cellW/2+(p[0]-(x0+x1)/2)*scale,viewY+5+(viewH-5)/2+(p[1]-(y0+y1)/2)*scale]);
++        layout.push({repere:p.repere,page,mode,box:[x,viewY,cellW,viewH],bounds:[Math.min(...mapped.map(p=>p[0])),Math.min(...mapped.map(p=>p[1])),Math.max(...mapped.map(p=>p[0])),Math.max(...mapped.map(p=>p[1]))]});
++      });
++    }
++  }
++  const pages=pdf.getNumberOfPages();for(let i=1;i<=pages;i++){pdf.setPage(i);text('Vues ajustées indépendamment / Dimensions en mm / Consulter les fiches détaillées pour la fabrication',10,204,7);text(`${i} / ${pages}`,277,204,7);}
++  // QA can inspect numerical bounds without parsing compressed PDF commands.
++  Object.defineProperty(pdf,'partLayout',{value:layout});return pdf;
++}
+diff --git a/src/lib/assembly/pdf.mjs b/src/lib/assembly/pdf.mjs
+index 7e464afbec4c3fdca271b921b611ff7e1453f47b..5e479864fa055c65377cc6004cf0d9930ab72eef 100644
+--- a/src/lib/assembly/pdf.mjs
++++ b/src/lib/assembly/pdf.mjs
+@@ -11,7 +11,7 @@ export function makeAssemblyPdf(doc){
+   pdf.setProperties({title:`Plan d’assemblage - ${ref}`,author:clean(doc.meta.company),subject:'Vues et repérage de montage OF FACTORY'});
+   const text=(s,x,y,size=9,bold=false)=>{pdf.setFont('helvetica',bold?'bold':'normal');pdf.setFontSize(size);pdf.setTextColor(28,48,65);pdf.text(Array.isArray(s)?s.map(clean):clean(s),x,y);};
+   const line=(a,b,color='#536b7b',weight=.15)=>{pdf.setDrawColor(...rgb(color));pdf.setLineWidth(weight);pdf.line(a[0],a[1],b[0],b[1]);};
+-  const header=title=>{text('OF FACTORY / ASSEMBLAGE CHANTIER',12,13,10,true);text(ref,12,23,16,true);text(title,12,31,9);text(new Date().toLocaleDateString('fr-FR'),372,14,9);};
++  const header=title=>{text('OF FACTORY / ASSEMBLAGE CHANTIER',12,13,10,true);text(ref,12,23,16,true);text(title,12,31,9);text(new Date().toLocaleDateString('fr-FR'),372,14,9);if(doc.organization)text(`Client : ${doc.organization.clientName||'À attribuer'} / Chantier : ${doc.organization.siteName||'À attribuer'}`,12,35,7);};
+   header('Plan de montage - dimensions en mm - vues ajustées indépendamment');
+   const box=sceneBounds(doc.nodes),size=box.getSize(new Vector3());
+   text(`Encombrement X ${Math.round(size.x)} / Y ${Math.round(size.y)} / Z ${Math.round(size.z)} mm`,12,39,9);
+@@ -34,7 +34,7 @@ export function makeAssemblyPdf(doc){
+   }
+   page('Nomenclature - pièces présentes dans le plan');
+   row(['Repère / exemplaire','Type','Circuit','Dimensions de fabrication (mm)','Position X / Y / Z'],[65,65,40,165,61],{heading:true});
+-  for(const n of doc.nodes)row([nodeLabel(n),partName(n.part),n.circuit,Object.entries(n.part.dims).map(([k,v])=>`${k}=${v}`).join(' / '),n.position.map(v=>Math.round(v)).join(' / ')],[65,65,40,165,61]);
++  for(const n of doc.nodes.slice().sort((a,b)=>doc.sources.findIndex(p=>p.id===a.sourceId)-doc.sources.findIndex(p=>p.id===b.sourceId)))row([nodeLabel(n),partName(n.part),n.circuit,Object.entries(n.part.dims).map(([k,v])=>`${k}=${v}`).join(' / '),n.position.map(v=>Math.round(v)).join(' / ')],[65,65,40,165,61]);
+   y+=9;if(y>250)page('Quantités des fiches');else{text('Quantités des fiches',12,y,10,true);y+=5;}
+   row(['Repère','Prévues','Placées','Restant à placer'],[180,72,72,72],{heading:true});
+   for(const p of doc.sources){const count=doc.nodes.filter(n=>n.sourceId===p.id).length;row([p.repere,p.qty,count,p.qty-count],[180,72,72,72]);}
+diff --git a/src/pages/AssemblyWorkshop.jsx b/src/pages/AssemblyWorkshop.jsx
+index 56ea676d4889ab4beb42f301eab6fcc05a8e90d4..104e2949e80e5693c10f061d93b5262aa5d80c42 100644
+--- a/src/pages/AssemblyWorkshop.jsx
++++ b/src/pages/AssemblyWorkshop.jsx
+@@ -8,6 +8,9 @@ import {emptyAssembly,newNode,uid,volumePart,circularPart,roundTypes,partName,pa
+ import {circuitColors,sceneBounds} from '@/lib/assembly/geometry.mjs';
+ import {readFichePdf} from '@/lib/assembly/import.mjs';
+ import './AssemblyWorkshop.css';
++import {mountOrganization,organizationRequest} from '../../public/gaine-rectangulaire/organization.mjs';
++import '../../public/gaine-rectangulaire/organization.css';
++import {checkCoherence,assemblyCheckFingerprint} from '../../public/gaine-rectangulaire/coherence.mjs';
+ 
+ const portName=p=>p.label||({in:'Entrée',out:'Sortie',branch:'Branche'}[p.id])||'Raccord';
+ const number=value=>Number(Number(value).toFixed(1));
+@@ -17,20 +20,23 @@ export default function AssemblyWorkshop(){
+   const [doc,setDoc]=useState(emptyAssembly),docRef=useRef(doc),storage=useRef(null),ready=useRef(false),saved=useRef(''),history=useRef({past:[],future:[]}),dragBase=useRef(null);
+   const [loaded,setLoaded]=useState(false),[saveState,setSaveState]=useState('Ouverture…'),[selected,setSelected]=useState(null),[notice,setNotice]=useState(''),[failure,setFailure]=useState(''),[busy,setBusy]=useState(false),[modal,setModal]=useState(null),[form,setForm]=useState({}),[sourcePort,setSourcePort]=useState('in'),[targetPort,setTargetPort]=useState(''),[search,setSearch]=useState(''),[full,setFull]=useState(null),[dragging,setDragging]=useState(false);
+   const fileInput=useRef(null);
+-  const [affaireKey,setAffaireKey]=useState('main'),[affaires,setAffaires]=useState([]),[affaireName,setAffaireName]=useState('');
++  const [affaireKey,setAffaireKey]=useState('main'),[reloadEpoch,setReloadEpoch]=useState(0);
++  const organizationHost=useRef(null),organizationUi=useRef(null),keyRef=useRef('main');
++  useEffect(()=>{organizationUi.current=mountOrganization({host:organizationHost.current,module:'AssemblyWorkspace',getCurrent:()=>({workspaceKey:keyRef.current,organization:docRef.current.organization}),makeDocument:name=>({...emptyAssembly(),meta:{...emptyAssembly().meta,reference:name}}),onOpen:changeAffaire,beforeAssign:async()=>{await storage.current.save(docRef.current);saved.current=JSON.stringify(docRef.current);},onError:error});return()=>organizationUi.current.destroy();},[]);
+   const switching=useRef(false),saveEpoch=useRef(0);
+-  async function refreshAffaires(){setAffaires(await createOfFactoryStorage({base:'/api/local/entities/AssemblyWorkspace'}).list());}
+-  async function changeAffaire(key,next){
+-    if(switching.current||!ready.current)return;
++  useEffect(()=>{if(!modal)return;const close=e=>{if(e.key==='Escape')setModal(null);};window.addEventListener('keydown',close);return()=>window.removeEventListener('keydown',close);},[modal]);
++  async function refreshAffaires(){await organizationUi.current?.refresh();}
++  async function changeAffaire(key,reload=false){
++    if(switching.current||!ready.current)throw Error('Attendez la fin de l’ouverture.');
+     switching.current=true;setBusy(true);setLoaded(false);++saveEpoch.current;
+     try{
+-      await storage.current.save(docRef.current);saved.current=JSON.stringify(docRef.current);
++      if(!reload)await storage.current.save(docRef.current);saved.current=JSON.stringify(docRef.current);
+       const target=createOfFactoryStorage({base:'/api/local/entities/AssemblyWorkspace',workspaceKey:key});
+-      const value=await target.load();if(!value&&!next)throw Error('Affaire introuvable.');
+-      validateAssemblyDocument(value||next);
+-      if(!value)await target.save(next);
+-      await refreshAffaires();setAffaireKey(key);
+-    }catch(e){error(e.message);setLoaded(true);}
++      const value=await target.load();if(!value)throw Error('Fabrication introuvable.');
++      validateAssemblyDocument(value);
++      keyRef.current=key;setAffaireKey(key);setReloadEpoch(v=>v+1);
++      await refreshAffaires();
++    }catch(e){error(e.message);setLoaded(true);throw e;}
+     finally{switching.current=false;setBusy(false);}
+   }
+   const node=doc.nodes.find(n=>n.id===selected),ports=node?portsOf(node):[],freePorts=ports.filter(p=>!occupied(doc,selected,p.id));
+@@ -47,9 +53,10 @@ export default function AssemblyWorkshop(){
+   }
+   useEffect(()=>{
+     setLoaded(false);ready.current=false;const service=createOfFactoryStorage({base:'/api/local/entities/AssemblyWorkspace',workspaceKey:affaireKey});storage.current=service;let live=true;
+-    service.load().then(value=>{if(!live)return;const next=value?validateAssemblyDocument(value):emptyAssembly();for(const n of next.nodes){const errors=partErrors(n.part);if(errors.length)throw Error(errors[0]);}saved.current=JSON.stringify(next);ready.current=true;history.current={past:[],future:[]};dragBase.current=null;setSelected(null);setSearch('');replace(next);refreshAffaires().catch(e=>error(e.message));setSaveState('Enregistré sur cet ordinateur');setLoaded(true);}).catch(e=>{if(live){error(`Ouverture impossible : ${e.message}`);setSaveState('Enregistrement suspendu');}});
++    keyRef.current=affaireKey;
++    service.load().then(async value=>{if(!live)return;const next=value?validateAssemblyDocument(value):emptyAssembly();if(next.organization?.fabricationId){const registry=await organizationRequest(),f=registry.fabrications.find(f=>f.id===next.organization.fabricationId);if(f?.bindings.RectangularDuctWorkspace){const sheets=await createOfFactoryStorage({workspaceKey:f.keys.RectangularDuctWorkspace}).load();if(sheets)next.sources=structuredClone(sheets.parts);}}if(!live)return;for(const n of next.nodes){const errors=partErrors(n.part);if(errors.length)throw Error(errors[0]);}saved.current=JSON.stringify(next);ready.current=true;history.current={past:[],future:[]};dragBase.current=null;setSelected(null);setSearch('');replace(next);setSaveState('Enregistré sur cet ordinateur');setLoaded(true);refreshAffaires().catch(e=>error(e.message));}).catch(e=>{if(live){error(`Ouverture impossible : ${e.message}`);setSaveState('Enregistrement suspendu');}});
+     return()=>{live=false;if(ready.current&&JSON.stringify(docRef.current)!==saved.current)service.save(docRef.current).catch(()=>{});ready.current=false;};
+-  },[affaireKey]);
++  },[affaireKey,reloadEpoch]);
+   useEffect(()=>{
+     if(!ready.current||switching.current||JSON.stringify(doc)===saved.current)return;
+     setSaveState('Enregistrement…');const snapshot=JSON.stringify(doc),epoch=saveEpoch.current,service=storage.current,timer=setTimeout(()=>{if(epoch!==saveEpoch.current)return;service.save(doc).then(()=>{if(epoch!==saveEpoch.current)return;saved.current=snapshot;if(JSON.stringify(docRef.current)===snapshot)setSaveState('Enregistré sur cet ordinateur');}).catch(e=>{setSaveState('Échec de l’enregistrement');error(e.message);});},300);
+@@ -76,7 +83,19 @@ export default function AssemblyWorkshop(){
+     else{select(id);setSourcePort(pid);message('Choisir une autre pièce puis ce raccord pour l’assembler.');}
+   }
+   async function currentSheets(){setBusy(true);try{const sourceStore=createOfFactoryStorage();const rows=await sourceStore.list();setModal({kind:'sourceAffaire',rows});}catch(e){error(e.message);}finally{setBusy(false);}}
+-  async function importAffaire(key){setBusy(true);try{const sourceStore=createOfFactoryStorage({workspaceKey:key});const ws=await sourceStore.load();if(!ws?.parts?.length)throw Error('Aucune fiche disponible. Créez vos pièces dans Gaine rectangulaire ou importez un PDF.');commit(d=>importSources(d,ws),`${ws.parts.length} fiches chargées. Les quantités sont conservées.`);setModal(null);}catch(e){error(e.message);}finally{setBusy(false);}}
++  async function importAffaire(key){setBusy(true);try{
++    const registry=await organizationRequest(),f=registry.fabrications.find(f=>f.keys.RectangularDuctWorkspace===key);
++    if(!f)throw Error('Fabrication introuvable.');
++    const result=await organizationRequest({requestId:f.id,module:'AssemblyWorkspace',document:emptyAssembly()});
++    // Save the active assembly first, then refresh only the inventory of the
++    // target fabrication. Existing placements and connections remain intact.
++    await storage.current.save(docRef.current);
++    const target=createOfFactoryStorage({base:'/api/local/entities/AssemblyWorkspace',workspaceKey:result.workspaceKey});
++    const targetDoc=await target.load(),sheets=await createOfFactoryStorage({workspaceKey:key}).load();
++    targetDoc.sources=structuredClone(sheets.parts);targetDoc.organization={...sheets.organization,...result};
++    await target.save(targetDoc);await changeAffaire(result.workspaceKey,true);setModal(null);
++  }catch(e){error(e.message);}finally{setBusy(false);}}
++
+   async function importFile(event){const file=event.target.files?.[0];event.target.value='';if(!file)return;setBusy(true);try{
+     if(file.size>25*1024*1024)throw Error('Fichier limité à 25 Mo.');
+     const value=/\.pdf$/i.test(file.name)?await readFichePdf(file,setNotice):JSON.parse(await file.text());
+@@ -101,10 +120,18 @@ export default function AssemblyWorkshop(){
+     if(commit(next,modal.editId?'Dimensions modifiées. Contrôlez les raccords existants.':'Élément ajouté.')){setModal(null);if(newId)select(newId);}
+   }catch(e){error(e.message);}}
+   async function exportPdf(){setBusy(true);try{const {makeAssemblyPdf}=await import('@/lib/assembly/pdf.mjs');const pdf=makeAssemblyPdf(doc);saveFile(`assemblage-${doc.meta.reference||'chantier'}.pdf`,pdf.output('arraybuffer'),'application/pdf');message('Plan PDF vectoriel exporté.');}catch(e){error(e.message);}finally{setBusy(false);}}
++  const betaWarnings=doc.coherence?.fingerprint===assemblyCheckFingerprint(doc)?doc.coherence.warnings.filter(w=>!doc.coherence.ignored.includes(w.id)):[];
++  function betaCheck(){
++    const current=docRef.current,fingerprint=assemblyCheckFingerprint(current);
++    const warnings=checkCoherence([...current.sources,...current.nodes.filter(n=>!n.sourceId&&n.part.id).map(n=>n.part)],{nodes:current.nodes,connections:current.connections,portsForNode:portsOf,sectionCompatibility:compatibility});
++    const coherence={fingerprint,warnings,checkedAt:new Date().toISOString(),ignored:current.coherence?.fingerprint===fingerprint?current.coherence.ignored:[]};
++    replace({...current,coherence});setModal({kind:'coherence',warnings:warnings.filter(w=>!coherence.ignored.includes(w.id))});
++  }
++  function ignoreBeta(id){const current=docRef.current;replace({...current,coherence:{...current.coherence,ignored:[...current.coherence.ignored,id]}});setModal({...modal,warnings:modal.warnings.filter(w=>w.id!==id)});}
+   function setting(key,value){commit(d=>({...d,settings:{...d.settings,[key]:value}}));}
+   return <main className="assembly-app">
+     <header className="assembly-heading"><div><p className="assembly-eyebrow">OF FACTORY · CHANTIER</p><h1>Assemblage chantier <span>Première version</span></h1><p>Placez vos pièces, raccordez les faces et préparez le plan de montage.</p></div><div className="assembly-save"><CheckCircle2 size={15}/>{saveState}</div></header>
+-    <div className="assembly-toolbar"><label>Affaire <select aria-label="Affaire assemblage" value={affaireKey} disabled={!loaded||busy} onChange={e=>changeAffaire(e.target.value)}>{!affaires.some(a=>a.workspaceKey===affaireKey)&&<option value={affaireKey}>{doc.meta.reference||'Affaire sans nom'}</option>}{affaires.map(a=><option key={a.workspaceKey} value={a.workspaceKey}>{a.workspaceKey===affaireKey?(doc.meta.reference||'Affaire sans nom'):a.name}</option>)}</select></label><button disabled={!loaded||busy} onClick={()=>{setAffaireName('');setModal({kind:'newAffaire'});}}><Plus size={16}/>Nouvelle affaire</button></div>
++    <div className="assembly-toolbar organization" ref={organizationHost}/>
+     <fieldset inert={!loaded||busy?'':undefined} disabled={!loaded||busy} style={{border:0,padding:0,margin:0,minWidth:0}}>
+     <div className="assembly-toolbar">
+       <button onClick={currentSheets} disabled={busy||!loaded}><FileText size={16}/>Reprendre mes fiches</button>
+@@ -120,14 +147,14 @@ export default function AssemblyWorkshop(){
+     </div>
+     {(notice||failure||busy)&&<div className={`assembly-message ${failure?'is-error':''}`} role={failure?'alert':'status'}>{failure?<AlertTriangle size={17}/>:<CheckCircle2 size={17}/>}<span>{failure||notice||(busy?'Traitement en cours…':'')}</span><button aria-label="Fermer le message" onClick={()=>{setFailure('');setNotice('');}}>×</button></div>}
+     <div className="assembly-layout">
+-      <aside className="assembly-panel assembly-inventory"><h2>Pièces du chantier <span>{placed} / {total}</span></h2>
++      <aside className="assembly-panel assembly-inventory"><button className="assembly-text-button" onClick={betaCheck}>Vérifier la cohérence · BÊTA</button><p className="assembly-hint">{!doc.coherence?'Vérification facultative non effectuée':doc.coherence.fingerprint!==assemblyCheckFingerprint(doc)?'Dimensions ou raccords modifiés : relancer la vérification':`Vérifié le ${new Date(doc.coherence.checkedAt).toLocaleString('fr-FR')} · ${betaWarnings.length} signalement(s)`}</p><h2>Pièces du chantier <span>{placed} / {total}</span></h2>
+         <input aria-label="Référence du chantier" placeholder="Référence du chantier" maxLength={100} value={doc.meta.reference} disabled={!loaded} onChange={e=>commit(d=>({...d,meta:{...d.meta,reference:e.target.value}}))}/>
+         <input aria-label="Rechercher une pièce" placeholder="Rechercher un repère…" value={search} onChange={e=>setSearch(e.target.value)}/>
+         <p className="assembly-hint">Sélectionnez une pièce cible, puis « Placer » : un raccord compatible s’aimante automatiquement.</p>
+-        <div className="assembly-source-list">{doc.sources.filter(p=>`${p.repere} ${partName(p)}`.toLowerCase().includes(search.toLowerCase())).map(p=>{const count=doc.nodes.filter(n=>n.sourceId===p.id).length;return <article key={p.id}><div><strong>{p.repere}</strong><small>{partName(p)}</small><small>{count} / {p.qty} placé(s)</small></div><button onClick={()=>addPiece(p.id)} disabled={count>=p.qty} aria-label={`Placer ${p.repere}`}><Plus size={14}/>Placer</button></article>;})}</div>
++        <div className="assembly-source-list">{doc.sources.filter(p=>`${p.repere} ${partName(p)}`.toLowerCase().includes(search.toLowerCase())).map(p=>{const count=doc.nodes.filter(n=>n.sourceId===p.id).length;return <article key={p.id}><div><strong>{p.repere}</strong>{betaWarnings.some(w=>w.partId===p.id)&&<button aria-label={`Avertissements ${p.repere}`} onClick={()=>setModal({kind:'coherence',warnings:betaWarnings.filter(w=>w.partId===p.id)})}>⚠ BÊTA</button>}<small>{partName(p)}</small><small>{count} / {p.qty} placé(s)</small></div><button onClick={()=>addPiece(p.id)} disabled={count>=p.qty} aria-label={`Placer ${p.repere}`}><Plus size={14}/>Placer</button></article>;})}</div>
+         {!doc.sources.length&&<div className="assembly-empty"><FileText size={28}/><p>Chargez les fiches de fabrication de votre chantier.</p><Link to="/gaine-rectangulaire">Ouvrir les fiches <ChevronRight size={14}/></Link></div>}
+-        <div className="assembly-placed"><h3>Éléments placés <span>{doc.nodes.length}</span></h3>{doc.nodes.map(n=><button key={n.id} className={selected===n.id?'is-selected':''} onClick={()=>select(n.id)}><i style={{background:circuitColors[n.circuit]||'#94a3b8'}}/><span>{nodeLabel(n)}</span><small>{n.locked?'Fixé':''}</small></button>)}</div>
+-        <button className="assembly-text-button" onClick={()=>setModal({kind:'demo'})} disabled={!loaded}>Charger un exemple</button><button className="assembly-text-button" onClick={()=>{setAffaireName('');setModal({kind:'newAffaire'});}} disabled={!loaded}>Nouvelle affaire</button>
++        <div className="assembly-placed"><h3>Éléments placés <span>{doc.nodes.length}</span></h3>{doc.nodes.slice().sort((a,b)=>doc.sources.findIndex(p=>p.id===a.sourceId)-doc.sources.findIndex(p=>p.id===b.sourceId)).map(n=><button key={n.id} className={selected===n.id?'is-selected':''} onClick={()=>select(n.id)}><i style={{background:circuitColors[n.circuit]||'#94a3b8'}}/><span>{nodeLabel(n)}{betaWarnings.some(w=>w.partId===(n.sourceId||n.part.id))?' ⚠':''}</span><small>{n.locked?'Fixé':''}</small></button>)}</div>
++        <button className="assembly-text-button" onClick={()=>setModal({kind:'demo'})} disabled={!loaded}>Charger un exemple</button><button className="assembly-text-button" onClick={()=>organizationUi.current.openNew()} disabled={!loaded}>Nouvelle affaire</button>
+       </aside>
+       <div className="assembly-center"><div className="assembly-scene-controls"><label className={doc.settings.magnet?'active':''}><input type="checkbox" checked={doc.settings.magnet} onChange={e=>setting('magnet',e.target.checked)}/><Magnet size={16}/>Aimantation</label><label>Distance <input aria-label="Distance d’aimantation" type="number" min="1" max="2000" value={doc.settings.snapDistance} onChange={e=>{const n=Number(e.target.value);if(n>=1&&n<=2000)setting('snapDistance',n);}}/> mm</label><label><input type="checkbox" checked={doc.settings.labels} onChange={e=>setting('labels',e.target.checked)}/>Repères</label><label><input type="checkbox" checked={doc.settings.wire} onChange={e=>setting('wire',e.target.checked)}/>Fil de fer</label><select aria-label="Vue agrandie" value={full||''} onChange={e=>setFull(e.target.value||null)}><option value="">4 vues</option><option value="iso">Perspective agrandie</option><option value="front">Face agrandie</option><option value="top">Dessus agrandi</option><option value="side">Côté agrandi</option></select></div>
+         <div className={`assembly-views ${full?'single':''}`}>{(full?[full]:['iso','front','top','side']).map(mode=><AssemblyView key={mode} doc={doc} mode={mode} selected={selected} onSelect={select} onMove={onMove} onFinish={onFinish} onPort={onPort} onError={text=>{error(text);setDragging(false);dragBase.current=null;}}/>)}</div>
+@@ -156,7 +183,7 @@ export default function AssemblyWorkshop(){
+     </div>
+     </fieldset>
+     {modal&&<div className="assembly-modal-backdrop"><section role="dialog" aria-modal="true" aria-labelledby="assembly-modal-title" className="assembly-modal"><button className="assembly-modal-close" aria-label="Fermer" onClick={()=>setModal(null)}>×</button>
+-      {modal.kind==='newAffaire'?<form onSubmit={async e=>{e.preventDefault();const name=affaireName.trim();if(!name)return;const next=emptyAssembly();next.meta={...doc.meta,reference:name};setModal(null);await changeAffaire('affaire-'+crypto.randomUUID(),next);}}><h2 id="assembly-modal-title">Nouvelle affaire</h2><Field label="Nom de l’affaire" type="text" value={affaireName} onChange={value=>setAffaireName(value.slice(0,80))}/><p>L’affaire actuelle et son assemblage seront conservés.</p><div className="assembly-modal-actions"><button type="button" onClick={()=>setModal(null)}>Annuler</button><button className="assembly-primary" type="submit">Créer l’affaire</button></div></form>:modal.kind==='sourceAffaire'?<><h2 id="assembly-modal-title">Reprendre les fiches d’une affaire</h2>{modal.rows.length?modal.rows.map(row=><button className="assembly-wide" key={row.id} disabled={busy} onClick={()=>importAffaire(row.workspaceKey)}>{row.name} · {row.document?.parts?.length||0} pièce(s)</button>):<p>Aucune fiche enregistrée dans Gaine rectangulaire.</p>}</>:['demo','clear','replace'].includes(modal.kind)?<><h2 id="assembly-modal-title">{modal.kind==='demo'?'Charger la démonstration ?':modal.kind==='clear'?'Commencer un nouveau chantier ?':'Ouvrir cet assemblage ?'}</h2><p>Le chantier ouvert sera remplacé. Vous pouvez le conserver avec « Sauver le projet ». L’action peut aussi être annulée.</p><div className="assembly-modal-actions"><button onClick={()=>setModal(null)}>Annuler</button><button className="assembly-primary" onClick={()=>{const next=modal.kind==='demo'?demoAssembly():modal.kind==='clear'?emptyAssembly():modal.value;if(commit(next,'Chantier ouvert.')){select(null);setModal(null);}}}>Continuer</button></div></>:<form onSubmit={submitForm}>
++      {modal.kind==='coherence'?<><h2 id="assembly-modal-title">Cohérence dimensionnelle · BÊTA</h2><p>Vérification effectuée. Suggestions facultatives ; aucune dimension modifiée.</p>{!modal.warnings.length&&<p>Aucun signalement selon les règles disponibles.</p>}{modal.warnings.map(w=><article key={w.id}><h3>{w.repere} · {w.level}</h3><p>{w.reason}</p><p>{w.compared} · Champs : {w.fields.join(', ')}</p><button onClick={()=>ignoreBeta(w.id)}>Ignorer cet avertissement</button></article>)}</>:modal.kind==='sourceAffaire'?<><h2 id="assembly-modal-title">Reprendre les fiches d’une affaire</h2>{modal.rows.length?modal.rows.map(row=><button className="assembly-wide" key={row.id} disabled={busy} onClick={()=>importAffaire(row.workspaceKey)}>{row.document?.organization?.clientName||'Client à attribuer'} / {row.document?.organization?.siteName||'Chantier à attribuer'} / {row.name} · {row.document?.parts?.length||0} pièce(s)</button>):<p>Aucune fiche enregistrée dans Gaine rectangulaire.</p>}</>:['demo','clear','replace'].includes(modal.kind)?<><h2 id="assembly-modal-title">{modal.kind==='demo'?'Charger la démonstration ?':modal.kind==='clear'?'Commencer un nouveau chantier ?':'Ouvrir cet assemblage ?'}</h2><p>Le chantier ouvert sera remplacé. Vous pouvez le conserver avec « Sauver le projet ». L’action peut aussi être annulée.</p><div className="assembly-modal-actions"><button onClick={()=>setModal(null)}>Annuler</button><button className="assembly-primary" onClick={()=>{const next=modal.kind==='demo'?demoAssembly():modal.kind==='clear'?emptyAssembly():modal.value;if(commit(next,'Chantier ouvert.')){select(null);setModal(null);}}}>Continuer</button></div></>:<form onSubmit={submitForm}>
+         <h2 id="assembly-modal-title">{({volume:'Volume de référence',rectangle:'Gaine ou coude rectangulaire',circular:'Accessoire circulaire',port:'Raccord sur la machine',takeoff:'Piquage circulaire sur la gaine'})[modal.kind]}</h2>
+         <p>{modal.kind==='volume'?'Définissez le volume de la machine, puis ajoutez ses raccords.':modal.kind==='takeoff'?'Le piquage est positionné sur une face de la gaine et assemblé automatiquement.':'Dimensions en mm.'}</p>
+         <div className="assembly-form-grid">
+diff --git a/src/pages/RectangularDuct.jsx b/src/pages/RectangularDuct.jsx
+index 1216855f32c40f2dbae7bebf09f26d4c5c443c29..248cf79eb73f4681d5736072269873cfd4f7e64c 100644
+--- a/src/pages/RectangularDuct.jsx
++++ b/src/pages/RectangularDuct.jsx
+@@ -1,12 +1,40 @@
+ import {useEffect,useRef} from 'react';
+ import {Link} from 'react-router-dom';
+ import {ductDownloadRequest} from '@/lib/ductDownload.mjs';
++import {checkCoherence} from '../../public/gaine-rectangulaire/coherence.mjs';
++import {createOfFactoryStorage} from '../../public/gaine-rectangulaire/storage.mjs';
+ 
+ export default function RectangularDuct() {
+   const frame=useRef(null);
+   useEffect(()=>{
+-    const receive=event=>{
++    const receive=async event=>{
+       if(event.origin!==window.location.origin||event.source!==frame.current?.contentWindow)return;
++      if(event.data?.type==='of-factory:duct-tool'){
++        const {id,action,document:doc}=event.data;
++        try{
++          if(!Array.isArray(doc?.parts)||doc.parts.length>2000)throw Error('Document invalide.');
++          let result;
++          if(action==='pdf'){
++            const {makePartPdf}=await import('@/lib/assembly/part-pdf.mjs');
++            result={bytes:makePartPdf(doc.parts,{...doc.meta,...doc.organization}).output('arraybuffer')};
++          }else if(action==='check'){
++            let assembly=null,connectionStatus='Aucun raccordement connu : seules les pièces sont vérifiées.';
++            if(doc.organization?.fabricationId){
++              const {organizationRequest}=await import('../../public/gaine-rectangulaire/organization.mjs');
++              const registry=await organizationRequest(),f=registry.fabrications.find(f=>f.id===doc.organization.fabricationId);
++              if(f?.keys?.AssemblyWorkspace){
++                const store=createOfFactoryStorage({base:'/api/local/entities/AssemblyWorkspace',workspaceKey:f.keys.AssemblyWorkspace});
++                assembly=await store.load();if(assembly)connectionStatus='Raccordements explicites de l’assemblage vérifiés avec les dimensions actuelles des fiches.';
++              }
++            }
++            const {portsOf,compatibility}=await import('@/lib/assembly/model.mjs');
++            const nodes=(assembly?.nodes||[]).map(n=>({...n,part:doc.parts.find(p=>p.id===n.sourceId)||n.part}));
++            result={warnings:checkCoherence(doc.parts,{nodes,connections:assembly?.connections||[],portsForNode:portsOf,sectionCompatibility:compatibility}),connectionStatus};
++          }else throw Error('Outil inconnu.');
++          event.source.postMessage({type:'of-factory:duct-tool-result',id,result},event.origin);
++        }catch(e){event.source.postMessage({type:'of-factory:duct-tool-result',id,error:e.message},event.origin);}
++        return;
++      }
+       const file=ductDownloadRequest(event.data);if(!file)return;
+       const url=URL.createObjectURL(new Blob([file.bytes],{type:file.mime})),link=document.createElement('a');
+       link.href=url;link.download=file.name;document.body.append(link);link.click();link.remove();
