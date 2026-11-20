@@ -1,0 +1,65 @@
+{
+  "version": "2.2.31-beta.1",
+  "sourceCommit": "ef4d877d6fddc8ea3e77cf7eb190f16cc98bacec",
+  "tests": {
+    "passed": 249,
+    "failed": 0,
+    "existing": 243,
+    "added": 6
+  },
+  "targeted": {
+    "passed": 29,
+    "failed": 0
+  },
+  "build": "passed",
+  "lint": "passed",
+  "patchCheckAgainstOriginal230": "passed",
+  "browser": {
+    "checks": [
+      "Création par Entrée, enregistrement et fermeture après succès",
+      "Échap annule sans création",
+      "Création souris de deux chantiers pour un même client",
+      "Validations répétées sans doublon et plusieurs fabrications par chantier",
+      "Échec de sauvegarde garde le formulaire ouvert, reprise possible",
+      "Vérification facultative et avertissement ignoré sans bloquer la fabrication",
+      "Téléchargement réel du PDF 3D depuis le module intégré",
+      "Téléchargement réel des fiches détaillées existantes",
+      "Réouverture : ordre personnalisé et date de création conservés",
+      "Ancienne affaire ouverte et attribuée manuellement sans recréer son client",
+      "Assemblage reprend les mêmes identifiants, le client, le chantier et l’ordre",
+      "Création par Entrée également dans Assemblage Chantier",
+      "Contrôle BÊTA également accessible dans Assemblage Chantier",
+      "Aucune erreur JavaScript pendant les scénarios"
+    ],
+    "pageErrors": []
+  },
+  "pdfAudit": [
+    {
+      "file": "fiches-detaillees-familles.pdf",
+      "pages": 12,
+      "bytes": 41282
+    },
+    {
+      "file": "ui-fiches-detaillees.pdf",
+      "pages": 2,
+      "bytes": 7949
+    },
+    {
+      "file": "ui-vues-3d.pdf",
+      "pages": 1,
+      "bytes": 10628
+    },
+    {
+      "file": "vues-3d-100-pieces.pdf",
+      "pages": 50,
+      "bytes": 772519
+    },
+    {
+      "file": "vues-3d-familles.pdf",
+      "pages": 5,
+      "bytes": 36636
+    }
+  ],
+  "productionPublished": false,
+  "windowsInstallerBuilt": false
+}
