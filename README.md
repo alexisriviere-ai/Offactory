@@ -2,7 +2,9 @@
 
 Application Windows pour la fabrication de plénums, la tôlerie, le dessin libre, le nesting, les étiquettes atelier et les plans d’assemblage chantier.
 
-**[Télécharger l’installateur Windows OF FACTORY 2.2.30](https://github.com/alexisriviere-ai/Offactory/releases/download/v2.2.30/OF-Factory-Setup-2.2.30.exe)**
+**[Télécharger l’installateur Windows OF FACTORY 2.2.33](https://github.com/alexisriviere-ai/Offactory/releases/download/v2.2.33/OF-Factory-Setup-2.2.33.exe)**
+
+Dans Gaine rectangulaire, il est possible de supprimer une fabrication après confirmation et d’ajouter un sifflet grillagé rectangulaire. Son prix d’achat indicatif correspond à un mètre de gaine droite de même section. [Voir les nouveautés de la version 2.2.33](https://github.com/alexisriviere-ai/Offactory/releases/tag/v2.2.33).
 
 Dans le lecteur devis et OF, la version 2.2.30 interprète **CS3** comme un plénum de grille à piquage axial et **CS4** comme un plénum de grille à piquage latéral. Le suffixe **-I** indique une version isolée. [Voir la version et son correctif source](https://github.com/alexisriviere-ai/Offactory/releases/tag/v2.2.30).
 
